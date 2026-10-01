@@ -24,7 +24,7 @@ function BarrierOpener.OpenBarriers(closeWhenFar)
     local player = UEHelpers:GetPlayer()
     if not Utils.IsValidObject(player) then return nil end
 
-    if not player.bVehicleDriver then return nil end 
+    if not Utils.IsVehiclePawn(player) then return nil end
 
     local playerPos = player:K2_GetActorLocation()
 

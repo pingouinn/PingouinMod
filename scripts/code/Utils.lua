@@ -1,11 +1,18 @@
 local Utils = {}
 
+--- Checks if an object is valid (not nil and not destroyed).
+-- @param object (UObject) The object to check
+-- @return (boolean) True if the object is valid, false otherwise
 function Utils.IsValidObject(object)
     if not object then return false end
     local success, valid = pcall(function() return object:IsValid() end)
     return success and valid == true
 end
 
+--- Normalizes a vector represented as a table with named keys.
+-- @param value (table) The vector to normalize
+-- @param namedKeys (table) A table containing the names of the keys to use for the vector components
+-- @return (table|nil) A normalized vector table with the same named keys, or nil if the input is invalid
 function Utils.NormalizeVector(value, namedKeys)
     if type(value) ~= "table" then return nil end
 
@@ -28,6 +35,17 @@ function Utils.NormalizeVector(value, namedKeys)
         [namedKeys[2]] = second,
         [namedKeys[3]] = third,
     }
+end
+
+--- Checks if a given player controller or character is currently in a vehicle.
+-- @param playerControllerOrCharacter (UPlayerController|ACharacter) The player controller or character to check
+-- @return (boolean) True if the player is in a vehicle, false otherwise
+function Utils.IsVehiclePawn(playerControllerOrCharacter)
+    if not playerControllerOrCharacter then return false end
+
+    local character = playerControllerOrCharacter.LocalCharacter or playerControllerOrCharacter
+    if not Utils.IsValidObject(character) then return false end
+    return Utils.IsValidObject(character.InVehicle) or character.bVehicleDriver == true
 end
 
 --- Enables the cheat manager for a given player controller, constructing it if necessary.
