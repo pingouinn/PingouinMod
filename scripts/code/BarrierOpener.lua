@@ -22,7 +22,7 @@ end
 
 function BarrierOpener.OpenBarriers(closeWhenFar)
     local player = UEHelpers:GetPlayer()
-    if not player or not player:IsValid() then print("[PingouinMod] Player is not valid\n") return nil end
+    if not player or not player:IsValid() then return nil end
 
     if not player.bVehicleDriver then return nil end 
 
