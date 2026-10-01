@@ -122,7 +122,7 @@ NotifyOnNewObject("/Script/Engine.PlayerController", function(PlayerController)
 end)
 
 -- Noclip keybind
-RegisterKeyBind(Key.F2, function()
+RegisterKeyBind(Keybinds.NoClip, function()
     ExecuteInGameThread(function()
         NoClip.ToggleNoClip()
     end)

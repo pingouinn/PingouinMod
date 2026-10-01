@@ -18,6 +18,22 @@ SCRIPT_DIR = clean_script_path:match("(.*[/\\])")
 print("[PingouinMod] Config INI path: " .. SCRIPT_DIR .. "config.ini")
 LIP.INIPATH = SCRIPT_DIR .. "config.ini"
 
+local ConfigData = LIP.loadWrapper()
+local Settings = ConfigData.Settings or {}
+
+local function ResolveConfiguredKey(settingName, defaultKey)
+	local keyName = string.upper(tostring(Settings[settingName] or defaultKey))
+	return Key[keyName] or Key[defaultKey]
+end
+
+Keybinds = {
+	PlayerCheat = ResolveConfiguredKey("PlayerCheatKey", "F1"),
+	NoClip = ResolveConfiguredKey("NoClipKey", "F2"),
+	WorldBoundaries = ResolveConfiguredKey("WorldBoundariesKey", "F5"),
+	EntityOutline = ResolveConfiguredKey("EntityOutlineKey", "F6"),
+	GodMode = ResolveConfiguredKey("GodModeKey", "F7"),
+}
+
 MOD_FOLDER = Utils.GetModFolder(clean_script_path)
 print("[PingouinMod] Mod folder path: " .. MOD_FOLDER .. "\n")
 

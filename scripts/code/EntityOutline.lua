@@ -92,7 +92,7 @@ function EntityOutline.GC()
 end
 
 
-RegisterKeyBind(Key.F6, function()
+RegisterKeyBind(Keybinds.EntityOutline, function()
     print("[PingouinMod] Displaying entity outline\n")
     ExecuteInGameThread(function()
         EntityOutline.ToggleEntityOutline()

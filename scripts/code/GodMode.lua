@@ -42,7 +42,7 @@ function GodMode.ToggleGodMode(player, forceState)
 end
 
 -- Player god mode toggle
-RegisterKeyBind(Key.F7, function()
+RegisterKeyBind(Keybinds.GodMode, function()
     ExecuteInGameThread(function()
         GodMode.ToggleGodMode()
     end)

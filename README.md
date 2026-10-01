@@ -8,7 +8,7 @@
 
 ## 🎯 About
 
-**PingouinMod** is a framework/API for Rescue Ops: Wildfire designed to facilitate game modding in the future. Built on **UE4SS** (Unreal Engine 4 Scripting System), this mod provides a solid foundation for developing custom features and development tools.
+**PingouinMod** is a framework/API for Rescue Ops: Wildfire designed to facilitate game modding in the future. Built on **UE4SS** (Unreal Engine 4 Scripting System), this mod provides a foundation for developing custom features and development tools.
 
 The main goal is to create a reusable abstraction layer that simplifies interaction with the Unreal Engine API, allowing modders to focus on content creation rather than engine technical details.
 
@@ -70,21 +70,19 @@ Lua INI Parser for configuration file management
 4. Check the UE4SS console to confirm: `[PingouinMod] Mod loaded`
 
 
-
 ## 🎯 Usage
 
 ### Console Commands
 
 - `pos` - Display current player position
 - `tp x y z` - Teleport player to specified coordinates
-- `Spawn <AssetPath>` - Spawn an actor or a StaticMesh from its asset path
+- `Spawn <AssetPath> or <ShortName>` - Spawn an actor or a StaticMesh from its asset path or ShortNaming if provided in [config.ini](scripts/config.ini)
 - Example StaticMesh: `Spawn /Game/Environment/Props/S_Cone.S_Cone`
 - `DeleteAll` - Delete all spawned actors
 
 ### Keybinds
 
 Configurable in [config.ini](scripts/config.ini)
-
 
 ## 🔧 Architecture
 
@@ -108,20 +106,14 @@ main.lua (Entry Point)
 
 ## 🚀 Roadmap
 
-- [ ] NoClip system improvement for vehicles
-- [ ] DisableWorldBoundaries system finalization
-- [ ] Simplified scripting API for third-party modders
-- [ ] Complete documentation of exported functions
-- [ ] Custom events system
-- [ ] Multiplayer support (if applicable)
-- [ ] Further additions ! Including vehicle / custom model injection support, complete API ...
-
+- [ ] Object Placer
+- [ ] Improve robustness
+- [ ] Vehicle / Model injection 
 
 
 ## 🤝 Contributing
 
 This project serves as a foundation for future mod development on Rescue Ops: Wildfire. Contributions and suggestions are welcome!
-
 
 
 ## 📝 License
@@ -136,4 +128,4 @@ Conceaded under the GPL-3.0 license, you can modify the code and use it, but it 
 
 ---
 
-*Last updated: January 2026*
+*Last updated: October 2026*

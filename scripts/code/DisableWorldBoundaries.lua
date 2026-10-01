@@ -10,7 +10,7 @@ function WorldBoundaries.ToggleWorldBoundaries()
 end
 
 -- World boundaries keybind
-RegisterKeyBind(Key.F5, function()
+RegisterKeyBind(Keybinds.WorldBoundaries, function()
     print("[PingouinMod] Toggling world boundaries\n")
     ExecuteInGameThread(function()
         WorldBoundaries.ToggleWorldBoundaries()

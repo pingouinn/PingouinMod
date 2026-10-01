@@ -70,7 +70,7 @@ function PlayerCheat.TogglePlayerCheatMode()
 end
 
 -- Player cheat mode toggle
-RegisterKeyBind(Key.F1, function()
+RegisterKeyBind(Keybinds.PlayerCheat, function()
     ExecuteInGameThread(function()
         PlayerCheat.TogglePlayerCheatMode()
     end)
