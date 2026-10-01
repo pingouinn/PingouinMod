@@ -7,6 +7,8 @@ GodMode.isPlayerInGodMode = false
 -- Backup of player states and loop handle
 local savedPlayerState
 
+-- TODO : Need to implement other godmode features
+
 function GodMode.ToggleGodMode(player, forceState)
     if not player then
         -- TODO : Signature may change based on the actual player object class --> Find more robust way to get the player object

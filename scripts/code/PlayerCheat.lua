@@ -23,7 +23,6 @@ function PlayerCheat.TogglePlayerCheatMode()
         savedPlayerState = {
             player = player,
             movementComponent = charMoveComp,
-            bCanBeDamaged = player.bCanBeDamaged,
             jumpZVelocity = charMoveComp.JumpZVelocity,
             maxStepHeight = charMoveComp.MaxStepHeight,
             walkableFloorAngle = charMoveComp.WalkableFloorAngle,
@@ -32,7 +31,7 @@ function PlayerCheat.TogglePlayerCheatMode()
         }
   
 	    -- Player related 
-        player.bCanBeDamaged = false
+        GodMode.ToggleGodMode(player, true)
 
         -- Movement related
         charMoveComp.JumpZVelocity = 2000.0
@@ -58,7 +57,7 @@ function PlayerCheat.TogglePlayerCheatMode()
         end
 
         if savedPlayerState and savedPlayerState.player:IsValid() and savedPlayerState.movementComponent:IsValid() then
-            savedPlayerState.player.bCanBeDamaged = savedPlayerState.bCanBeDamaged
+            GodMode.ToggleGodMode(savedPlayerState.player, false)
             savedPlayerState.movementComponent.JumpZVelocity = savedPlayerState.jumpZVelocity
             savedPlayerState.movementComponent.MaxStepHeight = savedPlayerState.maxStepHeight
             savedPlayerState.movementComponent.WalkableFloorAngle = savedPlayerState.walkableFloorAngle
