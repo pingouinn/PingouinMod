@@ -1,6 +1,7 @@
 ----- STATIC DATA -----
 UEHelpers = require("UEHelpers")
 GB_StrToBool = {["true"]=true, ["TRUE"]=true, ["True"]=true, ["false"]=false, ["FALSE"]=false, ["False"]=false}
+Constants = require("code/Constants")
 
 
 -- Make an exception for the utils module to be loaded first because we depend on it
