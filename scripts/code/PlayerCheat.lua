@@ -23,7 +23,8 @@ function PlayerCheat.TogglePlayerCheatMode()
         savedPlayerState = {
             player = player,
             movementComponent = charMoveComp,
-            jumpZVelocity = charMoveComp.JumpZVelocity,
+            jumpZVelocity = player.JumpZVelocity,
+            jumpMaxCount = charMoveComp.JumpMaxCount,
             maxStepHeight = charMoveComp.MaxStepHeight,
             walkableFloorAngle = charMoveComp.WalkableFloorAngle,
             airControl = charMoveComp.AirControl,
@@ -32,6 +33,7 @@ function PlayerCheat.TogglePlayerCheatMode()
   
 	    -- Player related 
         GodMode.ToggleGodMode(player, true)
+        player.JumpMaxCount = 5
 
         -- Movement related
         charMoveComp.JumpZVelocity = 2000.0
@@ -58,6 +60,7 @@ function PlayerCheat.TogglePlayerCheatMode()
 
         if savedPlayerState and Utils.IsValidObject(savedPlayerState.player) and Utils.IsValidObject(savedPlayerState.movementComponent) then
             GodMode.ToggleGodMode(savedPlayerState.player, false)
+            savedPlayerState.player.JumpMaxCount = savedPlayerState.jumpMaxCount
             savedPlayerState.movementComponent.JumpZVelocity = savedPlayerState.jumpZVelocity
             savedPlayerState.movementComponent.MaxStepHeight = savedPlayerState.maxStepHeight
             savedPlayerState.movementComponent.WalkableFloorAngle = savedPlayerState.walkableFloorAngle
