@@ -59,12 +59,13 @@ function NoClip.ToggleNoClip()
                 -- pcall(function() playerController:ClientForceGarbageCollection() end)
 
                 local debugCamController = Utils.GetDebugCameraController()
+                if not Utils.IsValidObject(debugCamController) then return false end
                 -- pcall(function() debugCamController:ClientFlushLevelStreaming() end)
                 -- pcall(function() debugCamController:ClientForceGarbageCollection() end)
 
                 -- Teleports the player to the debug camera position
                 local cam = debugCamController.PlayerCameraManager
-                if not cam:IsValid() then print("[PingouinMod] Debug camera is not valid\n") return end
+                if not Utils.IsValidObject(cam) then return false end
                 
                 -- Offsets the cam position to place pawn in front of camera
                 local distance = 200.0

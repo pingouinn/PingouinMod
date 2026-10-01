@@ -4,7 +4,7 @@ Spawner.entitytracker = {}
 
 -- Detect meshes by path or reflected type.
 local function IsStaticMeshAsset(asset, assetPath)
-    if not asset or not asset:IsValid() then return false end
+    if not Utils.IsValidObject(asset) then return false end
 
     local normalizedPath = string.lower(tostring(assetPath or ""))
     if string.find(normalizedPath, "/staticmeshes/", 1, true) then return true end
@@ -23,12 +23,12 @@ local function LoadAssetWithRetries(assetPath, verbose)
 
     repeat
         loadedAsset = StaticFindObject(assetPath)
-        if not loadedAsset:IsValid() then
+        if not Utils.IsValidObject(loadedAsset) then
             if verbose then print("[PingouinMod] Asset not loaded yet, attempting to load it...\n") end
             loadedAsset = LoadAsset(assetPath)
         end
 
-        if loadedAsset:IsValid() then return loadedAsset end
+        if Utils.IsValidObject(loadedAsset) then return loadedAsset end
         maxRetries = maxRetries - 1
         if verbose and maxRetries > 0 then
             print(string.format("[PingouinMod] Failed to load asset, retrying... (%d retries left)\n", maxRetries))
@@ -49,7 +49,7 @@ function Spawner.SpawnActor(ActorClassPath, verbose)
     end
 
     local player = UEHelpers:GetPlayer()
-    if not player:IsValid() then print("[PingouinMod] ERROR: Could not get local player.\n") return end
+    if not Utils.IsValidObject(player) then print("[PingouinMod] ERROR: Could not get local player.\n") return end
 
     -- Spawn the actor in front of the player
     local newPos = Utils.GetPositionInFront(player:K2_GetActorLocation(), player:K2_GetActorRotation(), 500) -- TODO : Make it dynamic or config based (its to avoid vehicles spawning inside the player currently)
@@ -69,7 +69,7 @@ function Spawner.SpawnActor(ActorClassPath, verbose)
     end
 
     local Actor = world:SpawnActor(spawnClass, newPos, {Pitch = 0, Yaw = 0, Roll = 0})
-    if not Actor:IsValid() then
+    if not Utils.IsValidObject(Actor) then
         print("[PingouinMod] Failed to spawn actor.\n")
         return
     end
@@ -90,7 +90,7 @@ function Spawner.SpawnActor(ActorClassPath, verbose)
                 Scale3D = {X = 1, Y = 1, Z = 1},
             }, false)
         end)
-        if not addSuccess or not meshComponent or not meshComponent:IsValid() then
+        if not addSuccess or not Utils.IsValidObject(meshComponent) then
             print("[PingouinMod] ERROR: Could not create StaticMeshComponent.\n")
             Actor:K2_DestroyActor()
             return
@@ -108,7 +108,7 @@ function Spawner.SpawnActor(ActorClassPath, verbose)
             end)
             local propertyValid = false
             if propertySuccess and propertyMesh then
-                local validSuccess, validResult = pcall(function() return propertyMesh:IsValid() end)
+                local validSuccess, validResult = pcall(Utils.IsValidObject, propertyMesh)
                 propertyValid = validSuccess and validResult == true
             end
             propertyAssigned = propertyValid
@@ -152,7 +152,7 @@ end
 
 function Spawner.DeleteActor(Actor, verbose)
     verbose = verbose or false
-    if not Actor:IsValid() then print("[PingouinMod] ERROR: Attempted to delete an invalid actor.\n") return end
+    if not Utils.IsValidObject(Actor) then print("[PingouinMod] ERROR: Attempted to delete an invalid actor.\n") return end
     if verbose then print(string.format("[PingouinMod] Deleting actor [0x%X] of class: %s\n", Actor:GetAddress(), Actor.ClassName)) end
 
     -- Remove from Game Manager tracking
@@ -169,7 +169,7 @@ function Spawner.DeleteActor(Actor, verbose)
     local success = false
     -- Destroy the actor
     Actor:K2_DestroyActor()
-    if not Actor:IsValid() then 
+    if not Utils.IsValidObject(Actor) then
         if verbose then print("[PingouinMod] Actor successfully destroyed.\n") end
         success = true
     else
@@ -188,7 +188,7 @@ end
 
 function Spawner.GC()
     for actor, infos in pairs(Spawner.entitytracker) do
-        if not actor:IsValid() then
+        if not Utils.IsValidObject(actor) then
             print(string.format("[PingouinMod] Garbage collecting invalid actor [0x%X] of class %s\n", infos.address, infos.className))
             Spawner.entitytracker[actor] = nil
         elseif infos.registeredDeletion then

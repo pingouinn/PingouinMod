@@ -8,8 +8,8 @@ local GetKismetMathLibrary = UEHelpers.GetKismetMathLibrary
 local GetPlayerController = UEHelpers.GetPlayerController
 
 local function ValidateKsmLibs()
-    if not GetKismetSystemLibrary():IsValid() then print("KismetSystemLibrary not valid\n") return false end
-    if not GetKismetMathLibrary():IsValid() then print("KismetMathLibrary not valid\n") return false end
+    if not Utils.IsValidObject(GetKismetSystemLibrary()) then print("KismetSystemLibrary not valid\n") return false end
+    if not Utils.IsValidObject(GetKismetMathLibrary()) then print("KismetMathLibrary not valid\n") return false end
     return true
 end
 
@@ -72,7 +72,7 @@ function EntityOutline.ToggleEntityOutline()
 
     local entity = EntityOutline.PerformRaycast()
     if entity == nil then return end
-    if not entity:IsValid() then print("[PingouinMod] Hit entity is not valid\n") return end
+    if not Utils.IsValidObject(entity) then print("[PingouinMod] Hit entity is not valid\n") return end
 
     if EntityOutline.OutlinedEntities[entity] then
         print("[PingouinMod] Removing outline from entity\n")

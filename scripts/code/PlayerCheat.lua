@@ -12,9 +12,9 @@ function PlayerCheat.TogglePlayerCheatMode()
     -- TODO : Signature may change based on the actual player object class --> Find more robust way to get the player object
     local firstPlayerController = UEHelpers:GetPlayerController()
     local player = firstPlayerController.Pawn
-    if not player:IsValid() then print("PlayerAbilities : Player object is not valid\n") return end
+    if not Utils.IsValidObject(player) then print("PlayerAbilities : Player object is not valid\n") return end
     local charMoveComp = player.CharacterMovement 
-    if not charMoveComp:IsValid() then return end
+    if not Utils.IsValidObject(charMoveComp) then return end
 
     PlayerCheat.isPlayerCheating = not PlayerCheat.isPlayerCheating
     if PlayerCheat.isPlayerCheating then
@@ -56,7 +56,7 @@ function PlayerCheat.TogglePlayerCheatMode()
             movementLoopHandle = nil
         end
 
-        if savedPlayerState and savedPlayerState.player:IsValid() and savedPlayerState.movementComponent:IsValid() then
+        if savedPlayerState and Utils.IsValidObject(savedPlayerState.player) and Utils.IsValidObject(savedPlayerState.movementComponent) then
             GodMode.ToggleGodMode(savedPlayerState.player, false)
             savedPlayerState.movementComponent.JumpZVelocity = savedPlayerState.jumpZVelocity
             savedPlayerState.movementComponent.MaxStepHeight = savedPlayerState.maxStepHeight

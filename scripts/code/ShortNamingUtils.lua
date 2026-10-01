@@ -29,10 +29,6 @@ local probableBlueprintPaths = {
     "/Game/Wildfire/Blueprints/Core/Connectors/",
 }
 
-local function IsValidObject(object)
-    return object and object:IsValid()
-end
-
 local function CacheShortName(shortName, assetPath)
     shortNameMap[shortName] = assetPath
     LIP.saveWrapper({
@@ -47,10 +43,10 @@ local function FindBlueprintPath(shortName)
     for _, basePath in ipairs(probableBlueprintPaths) do
         local candidatePath = ShortNaming.ConstructName(basePath, shortName)
         local foundObject = StaticFindObject(candidatePath)
-        if not IsValidObject(foundObject) then
+        if not Utils.IsValidObject(foundObject) then
             foundObject = LoadAsset(candidatePath)
         end
-        if IsValidObject(foundObject) then return candidatePath end
+        if Utils.IsValidObject(foundObject) then return candidatePath end
     end
     return nil
 end

@@ -22,7 +22,7 @@ end
 
 function BarrierOpener.OpenBarriers(closeWhenFar)
     local player = UEHelpers:GetPlayer()
-    if not player or not player:IsValid() then return nil end
+    if not Utils.IsValidObject(player) then return nil end
 
     if not player.bVehicleDriver then return nil end 
 
@@ -33,12 +33,12 @@ function BarrierOpener.OpenBarriers(closeWhenFar)
 
     local validBarrierFound = false
     for _, barrier in ipairs(barriers) do
-        if barrier and barrier:IsValid() then
+        if Utils.IsValidObject(barrier) then
             validBarrierFound = true
             local barrierPos = barrier:K2_GetActorLocation()
             local distance = math.sqrt((playerPos.X - barrierPos.X)^2 + (playerPos.Y - barrierPos.Y)^2 + (playerPos.Z - barrierPos.Z)^2)
             local WFDoor = barrier.WFDoor
-            if WFDoor and WFDoor:IsValid() then
+            if Utils.IsValidObject(WFDoor) then
                 local barrierKey = GetBarrierKey(barrier)
                 local state = barrierStates[barrierKey]
 

@@ -13,7 +13,7 @@ function GodMode.ToggleGodMode(player, forceState)
     if not player then
         -- TODO : Signature may change based on the actual player object class --> Find more robust way to get the player object
         local firstPlayerController = UEHelpers:GetPlayerController()
-        if not firstPlayerController:IsValid() then print("GodMode : Player controller is not valid\n") return end
+        if not Utils.IsValidObject(firstPlayerController) then print("GodMode : Player controller is not valid\n") return end
         player = firstPlayerController.Pawn
     end
 
@@ -34,7 +34,7 @@ function GodMode.ToggleGodMode(player, forceState)
     else
         print("Plyr out of God Mode")
 
-        if savedPlayerState and savedPlayerState.player:IsValid() then
+        if savedPlayerState and Utils.IsValidObject(savedPlayerState.player) then
             savedPlayerState.player.MaxZVelocityBeforeDeath = savedPlayerState.maxZVelocityBeforeDeath
         end
         savedPlayerState = nil

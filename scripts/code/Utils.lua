@@ -1,24 +1,55 @@
 local Utils = {}
 
+function Utils.IsValidObject(object)
+    if not object then return false end
+    local success, valid = pcall(function() return object:IsValid() end)
+    return success and valid == true
+end
+
+function Utils.NormalizeVector(value, namedKeys)
+    if type(value) ~= "table" then return nil end
+
+    local first = value[namedKeys[1]]
+    local second = value[namedKeys[2]]
+    local third = value[namedKeys[3]]
+    if first == nil then
+        first = value[1]
+        second = value[2]
+        third = value[3]
+    end
+
+    first = tonumber(first)
+    second = tonumber(second)
+    third = tonumber(third)
+    if first == nil or second == nil or third == nil then return nil end
+
+    return {
+        [namedKeys[1]] = first,
+        [namedKeys[2]] = second,
+        [namedKeys[3]] = third,
+    }
+end
+
 --- Enables the cheat manager for a given player controller, constructing it if necessary.
 --- @param playerController (UPlayerController) The player controller to enable the cheat manager for
 --- @return (boolean) True if the cheat manager is enabled or already present, false otherwise
 function Utils.EnableCheatManager(playerController)
+    if not Utils.IsValidObject(playerController) then return false end
 
-    if not playerController.CheatManager:IsValid() then
+    if not Utils.IsValidObject(playerController.CheatManager) then
         local CheatManagerClass = playerController.CheatClass
-        if not CheatManagerClass:IsValid() then
+        if not Utils.IsValidObject(CheatManagerClass) then
             print("[PingouinMod] Controller:CheatClass is nullptr, using default CheatClass instead\n")
             CheatManagerClass = StaticFindObject("/Script/Engine.CheatManager") --[[@as UClass]]
         end
 
-        if not CheatManagerClass:IsValid() then
+        if not Utils.IsValidObject(CheatManagerClass) then
             print("[PingouinMod] Couldn't find default CheatClass, therefore, could not enable Cheat Manager\n")
             return false
         end
 
         local CreatedCheatManager = StaticConstructObject(CheatManagerClass, playerController)
-        if CreatedCheatManager:IsValid() then
+        if Utils.IsValidObject(CreatedCheatManager) then
             print(string.format("[PingouinMod] Constructed CheatManager [0x%X] | Success\n", CreatedCheatManager:GetAddress()))
             playerController.CheatManager = CreatedCheatManager
         else
@@ -34,9 +65,9 @@ end
 --- @return (UPlayerController) The Debug Camera Controller object
 local DebugCameraControllerCache = CreateInvalidObject()
 function Utils.GetDebugCameraController()
-    if DebugCameraControllerCache:IsValid() then return DebugCameraControllerCache end
+    if Utils.IsValidObject(DebugCameraControllerCache) then return DebugCameraControllerCache end
     for _, Controller in ipairs(FindAllOf("DebugCameraController") or {}) do
-        if Controller:IsValid() and (Controller.IsPlayerController and Controller:IsPlayerController() or Controller:IsLocalPlayerController()) then
+        if Utils.IsValidObject(Controller) and (Controller.IsPlayerController and Controller:IsPlayerController() or Controller:IsLocalPlayerController()) then
             DebugCameraControllerCache = Controller
             return DebugCameraControllerCache
         end
@@ -51,7 +82,7 @@ end
 -- @return (number, number, number) The new X, Y, Z coordinates after applying the offset
 function Utils.GetPositionInFront(Position, Rotation, distance)
     local KsmMath = UEHelpers:GetKismetMathLibrary()
-    if not KsmMath:IsValid() then print("[PingouinMod] KismetMathLibrary not valid\n") return Position end
+    if not Utils.IsValidObject(KsmMath) then print("[PingouinMod] KismetMathLibrary not valid\n") return Position end
     
     local AddValue = KsmMath:Multiply_VectorFloat(KsmMath:GetForwardVector(Rotation), distance)
     local EndVector = KsmMath:Add_VectorVector(Position, AddValue)
@@ -64,7 +95,7 @@ end
 -- @return (table) A table representing the forward vector with X, Y, Z fields
 function Utils.GetForwardVector(Rotation)
     local KsmMath = UEHelpers:GetKismetMathLibrary()
-    if not KsmMath:IsValid() then print("[PingouinMod] KismetMathLibrary not valid\n") return {X=0, Y=0, Z=0} end
+    if not Utils.IsValidObject(KsmMath) then print("[PingouinMod] KismetMathLibrary not valid\n") return {X=0, Y=0, Z=0} end
     return KsmMath:GetForwardVector(Rotation)
 end
 
@@ -124,12 +155,12 @@ function Utils.ResolveStaticMesh(assetPath, fallbackAsset)
     local objectName = string.match(assetPath, "%.([^%.]+)$") or string.match(assetPath, "/([^/]+)$")
     local staticMeshClass = StaticFindObject(Constants.STATIC_MESH_CLASS_PATH)
 
-    if staticMeshClass and staticMeshClass:IsValid() then
+    if Utils.IsValidObject(staticMeshClass) then
         for _, objectPath in ipairs({assetPath, packagePath}) do
             local success, typedAsset = pcall(function()
                 return StaticFindObject(staticMeshClass, nil, objectPath, true)
             end)
-            if success and typedAsset and typedAsset:IsValid() then return typedAsset end
+            if success and Utils.IsValidObject(typedAsset) then return typedAsset end
         end
     end
 
@@ -137,11 +168,11 @@ function Utils.ResolveStaticMesh(assetPath, fallbackAsset)
         local success, typedAsset = pcall(function()
             return FindObject("StaticMesh", objectName, 0, 0)
         end)
-        if success and typedAsset and typedAsset:IsValid() then return typedAsset end
+        if success and Utils.IsValidObject(typedAsset) then return typedAsset end
     end
 
     local packageAsset = LoadAsset(packagePath)
-    if packageAsset and packageAsset:IsValid() then return packageAsset end
+    if Utils.IsValidObject(packageAsset) then return packageAsset end
     return fallbackAsset
 end
 
@@ -151,7 +182,7 @@ end
 --- @return (FVector|nil) The impact point, or nil when no surface is hit
 function Utils.FindSurfaceBelow(Actor, Position)
     local KismetSystemLibrary = UEHelpers:GetKismetSystemLibrary()
-    if not KismetSystemLibrary:IsValid() then return nil end
+    if not Utils.IsValidObject(KismetSystemLibrary) then return nil end
 
     -- Start at the spawn point so overhead roofs are not selected first.
     local Start = {X = Position.X, Y = Position.Y, Z = Position.Z}
