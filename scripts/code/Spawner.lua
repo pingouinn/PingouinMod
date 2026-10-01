@@ -166,10 +166,12 @@ function Spawner.DeleteActor(Actor, verbose)
     if verbose then print("[PingouinMod] Actor removed from local entity tracker.\n") end
 
 
+    local success = false
     -- Destroy the actor
     Actor:K2_DestroyActor()
     if not Actor:IsValid() then 
         if verbose then print("[PingouinMod] Actor successfully destroyed.\n") end
+        success = true
     else
         print("[PingouinMod] ERROR: Failed to destroy actor.\n")
 
