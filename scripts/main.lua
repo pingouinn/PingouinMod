@@ -24,6 +24,7 @@ print("[PingouinMod] Mod folder path: " .. MOD_FOLDER .. "\n")
 
 PlayerCheat = require("code/PlayerCheat")
 Teleport = require("code/Teleport")
+GodMode = require("code/GodMode")
 NoClip = require("code/NoClip")
 Spawner = require("code/Spawner")
 ShortNaming = require("code/ShortNamingUtils")

@@ -1,0 +1,56 @@
+local GodMode = {}
+
+-- State variables
+
+GodMode.isPlayerInGodMode = false
+
+-- Backup of player states and loop handle
+local savedPlayerState
+
+function GodMode.ToggleGodMode(player, forceState)
+    if not player then
+        -- TODO : Signature may change based on the actual player object class --> Find more robust way to get the player object
+        local firstPlayerController = UEHelpers:GetPlayerController()
+        if not firstPlayerController:IsValid() then print("GodMode : Player controller is not valid\n") return end
+        player = firstPlayerController.Pawn
+    end
+
+    -- If forceState is provided, set the god mode state to that value, otherwise toggle the current state
+    if forceState ~= nil then GodMode.isPlayerInGodMode = forceState
+    else GodMode.isPlayerInGodMode = not GodMode.isPlayerInGodMode
+    end
+
+    -- Apply the god mode state to the player
+    if GodMode.isPlayerInGodMode then
+        print("Plyr in God Mode")
+        local savedPlayerState = {
+            player = player,
+            maxZVelocityBeforeDeath = player.MaxZVelocityBeforeDeath,
+        }
+
+        player.MaxZVelocityBeforeDeath = 100000.0
+    else
+        print("Plyr out of God Mode")
+
+        if savedPlayerState and savedPlayerState.player:IsValid() then
+            savedPlayerState.player.MaxZVelocityBeforeDeath = savedPlayerState.maxZVelocityBeforeDeath
+        end
+        savedPlayerState = nil
+    end
+end
+
+-- Player god mode toggle
+RegisterKeyBind(Key.F7, function()
+    ExecuteInGameThread(function()
+        GodMode.ToggleGodMode()
+    end)
+end)
+
+RegisterConsoleCommandHandler("GodMode", function()
+    ExecuteInGameThread(function()
+        GodMode.ToggleGodMode()
+    end)
+    return true
+end)
+
+return GodMode
