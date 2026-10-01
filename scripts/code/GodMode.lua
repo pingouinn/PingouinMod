@@ -25,7 +25,7 @@ function GodMode.ToggleGodMode(player, forceState)
     -- Apply the god mode state to the player
     if GodMode.isPlayerInGodMode then
         print("Plyr in God Mode")
-        local savedPlayerState = {
+        savedPlayerState = {
             player = player,
             maxZVelocityBeforeDeath = player.MaxZVelocityBeforeDeath,
         }
