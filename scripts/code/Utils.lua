@@ -120,9 +120,16 @@ function Utils.EnableCheatManager(playerController)
     return true
 end
 
---- Retrieves the Debug Camera Controller for the local player.
---- @return (UPlayerController) The Debug Camera Controller object
+
 local DebugCameraControllerCache = CreateInvalidObject()
+
+--- Resets the cached Debug Camera Controller, forcing a re-evaluation on the next retrieval.
+function Utils.ResetDebugCameraControllerCache()
+    DebugCameraControllerCache = CreateInvalidObject()
+end
+
+--- Gets the Debug Camera Controller for the local player, caching it for future calls.
+-- @return (UPlayerController) The Debug Camera Controller object
 function Utils.GetDebugCameraController()
     if Utils.IsValidObject(DebugCameraControllerCache) then return DebugCameraControllerCache end
     for _, Controller in ipairs(FindAllOf("DebugCameraController") or {}) do
