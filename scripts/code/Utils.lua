@@ -1,6 +1,6 @@
 local Utils = {}
 
---- Utility functions for the Pingouin Mod
+--- Enables the cheat manager for a given player controller, constructing it if necessary.
 --- @param playerController (UPlayerController) The player controller to enable the cheat manager for
 --- @return (boolean) True if the cheat manager is enabled or already present, false otherwise
 function Utils.EnableCheatManager(playerController)
@@ -79,6 +79,200 @@ function Utils.CheckLocationEquality(locA, locB, tolerance)
     return math.abs(locA.X - locB.X) <= tolerance and
            math.abs(locA.Y - locB.Y) <= tolerance and
            math.abs(locA.Z - locB.Z) <= tolerance
+end
+
+--- Unwraps a value returned through a UE4SS remote parameter.
+--- @param value (any) A direct value or a UE4SS remote parameter
+--- @return (any) The unwrapped value, or the original value when unchanged
+function Utils.UnwrapValue(value)
+    if not value then return nil end
+
+    local success, unwrappedValue = pcall(function() return value:get() end)
+    if success and unwrappedValue and unwrappedValue ~= value then return unwrappedValue end
+    return value
+end
+
+--- Reads a numeric value returned directly or wrapped by UE4SS.
+--- @param value (any) A number or UE4SS numeric parameter
+--- @return (number|nil) The numeric value, or nil when unavailable
+function Utils.ReadNumber(value)
+    value = Utils.UnwrapValue(value)
+    if type(value) == "number" then return value end
+    if not value then return nil end
+    return nil
+end
+
+--- Reads one component from a vector returned by UE4SS.
+--- @param vector (FVector|UScriptStruct) The vector to inspect
+--- @param component (string) The component name, such as X, Y, or Z
+--- @return (number|nil) The component value, or nil when unavailable
+function Utils.ReadVectorComponent(vector, component)
+    vector = Utils.UnwrapValue(vector)
+    if not vector then return nil end
+
+    local success, value = pcall(function() return vector[component] end)
+    if not success then return nil end
+    return Utils.ReadNumber(value)
+end
+
+--- Resolves a StaticMesh reference from an Unreal asset path.
+--- @param assetPath (string) The full Unreal asset path
+--- @param fallbackAsset (UObject) The asset returned when typed resolution fails
+--- @return (UStaticMesh|UObject|nil) The resolved mesh reference
+function Utils.ResolveStaticMesh(assetPath, fallbackAsset)
+    local packagePath = string.match(assetPath, "^(.*)%.[^%.]+$") or assetPath
+    local objectName = string.match(assetPath, "%.([^%.]+)$") or string.match(assetPath, "/([^/]+)$")
+    local staticMeshClass = StaticFindObject(Constants.STATIC_MESH_CLASS_PATH)
+
+    if staticMeshClass and staticMeshClass:IsValid() then
+        for _, objectPath in ipairs({assetPath, packagePath}) do
+            local success, typedAsset = pcall(function()
+                return StaticFindObject(staticMeshClass, nil, objectPath, true)
+            end)
+            if success and typedAsset and typedAsset:IsValid() then return typedAsset end
+        end
+    end
+
+    if objectName then
+        local success, typedAsset = pcall(function()
+            return FindObject("StaticMesh", objectName, 0, 0)
+        end)
+        if success and typedAsset and typedAsset:IsValid() then return typedAsset end
+    end
+
+    local packageAsset = LoadAsset(packagePath)
+    if packageAsset and packageAsset:IsValid() then return packageAsset end
+    return fallbackAsset
+end
+
+--- Finds the first blocking surface below a world position.
+--- @param Actor (AActor) The actor ignored by the trace
+--- @param Position (FVector) The center of the vertical trace
+--- @return (FVector|nil) The impact point, or nil when no surface is hit
+function Utils.FindSurfaceBelow(Actor, Position)
+    local KismetSystemLibrary = UEHelpers:GetKismetSystemLibrary()
+    if not KismetSystemLibrary:IsValid() then return nil end
+
+    -- Start at the spawn point so overhead roofs are not selected first.
+    local Start = {X = Position.X, Y = Position.Y, Z = Position.Z}
+    local End = {X = Position.X, Y = Position.Y, Z = Position.Z - Constants.TRACE_DISTANCE}
+    local HitResult = {}
+    local TraceColor = {R = 0, G = 0, B = 0, A = 0}
+    local WasHit = KismetSystemLibrary:LineTraceSingle(
+        Actor,
+        Start,
+        End,
+        0,
+        false,
+        {Actor},
+        0,
+        HitResult,
+        true,
+        TraceColor,
+        TraceColor,
+        0.0
+    )
+
+    if not WasHit then return nil end
+
+    return Utils.UnwrapValue(HitResult.ImpactPoint or HitResult.Location)
+end
+
+--- Moves an actor so the bottom of its bounds touches a surface point.
+--- @param Actor (AActor) The actor to move
+--- @param MeshComponent (UStaticMeshComponent) The mesh component used for bounds
+--- @param MeshAsset (UStaticMesh) The mesh asset used as a bounds fallback
+--- @param SurfacePoint (FVector|nil) The target surface point
+--- @return (nil) This function does not return a value
+function Utils.PlaceActorOnSurface(Actor, MeshComponent, MeshAsset, SurfacePoint)
+    if not SurfacePoint then return end
+
+    local actorLocation = Actor:K2_GetActorLocation()
+    local surfaceZ = Utils.ReadVectorComponent(SurfacePoint, "Z")
+    local actorX = Utils.ReadVectorComponent(actorLocation, "X")
+    local actorY = Utils.ReadVectorComponent(actorLocation, "Y")
+    local actorZ = Utils.ReadVectorComponent(actorLocation, "Z")
+    if not surfaceZ or not actorX or not actorY or not actorZ then return end
+
+    -- Local bounds avoid the unreliable component Bounds property.
+    local boundsSuccess, minBounds, maxBounds = pcall(function()
+        return MeshComponent:GetLocalBounds()
+    end)
+    local localBounds = boundsSuccess and minBounds and maxBounds
+    if (not boundsSuccess or not minBounds or not maxBounds) and MeshAsset then
+        boundsSuccess, minBounds, maxBounds = pcall(function()
+            return MeshAsset:GetLocalBounds()
+        end)
+        localBounds = boundsSuccess and minBounds and maxBounds
+    end
+    if not boundsSuccess or not minBounds or not maxBounds then
+        -- KismetSystemLibrary supports both common UE4SS out-parameter styles.
+        local KismetSystemLibrary = UEHelpers:GetKismetSystemLibrary()
+        local returnedSuccess, returnedOrigin, returnedExtent = pcall(function()
+            return KismetSystemLibrary:GetComponentBounds(MeshComponent)
+        end)
+        if returnedSuccess and returnedOrigin and returnedExtent then
+            minBounds = returnedOrigin
+            maxBounds = returnedExtent
+            boundsSuccess = true
+            localBounds = false
+        else
+            local originOutput = {}
+            local extentOutput = {}
+            local radiusOutput = {}
+            local outputSuccess = pcall(function()
+                KismetSystemLibrary:GetComponentBounds(MeshComponent, originOutput, extentOutput, radiusOutput)
+            end)
+            if outputSuccess then
+                minBounds = originOutput
+                maxBounds = extentOutput
+                boundsSuccess = true
+                localBounds = false
+            end
+        end
+    end
+    if not boundsSuccess or not minBounds or not maxBounds then return end
+
+    local minZ = Utils.ReadVectorComponent(minBounds, "Z")
+    local extentZ = Utils.ReadVectorComponent(maxBounds, "Z")
+    if not localBounds and extentZ then minZ = minZ - extentZ end
+    if not minZ then return end
+
+    local meshBottom = minZ
+    if localBounds then
+        meshBottom = actorZ + minZ
+    elseif extentZ then
+        meshBottom = minZ - extentZ
+    end
+
+    local verticalOffset = surfaceZ - meshBottom
+    local componentLocationSuccess, componentLocation = pcall(function()
+        return MeshComponent:K2_GetComponentLocation()
+    end)
+    if not componentLocationSuccess then
+        componentLocationSuccess, componentLocation = pcall(function()
+            return MeshComponent:GetComponentLocation()
+        end)
+    end
+
+    local componentX = componentLocationSuccess and Utils.ReadVectorComponent(componentLocation, "X") or actorX
+    local componentY = componentLocationSuccess and Utils.ReadVectorComponent(componentLocation, "Y") or actorY
+    local componentZ = componentLocationSuccess and Utils.ReadVectorComponent(componentLocation, "Z") or actorZ
+    if not componentX or not componentY or not componentZ then return end
+
+    local targetLocation = {
+        X = componentX,
+        Y = componentY,
+        Z = componentZ + verticalOffset,
+    }
+    local moveSuccess, moveResult = pcall(function()
+        return MeshComponent:K2_SetWorldLocation(targetLocation, false, {}, true)
+    end)
+    if not moveSuccess or moveResult == false then
+        moveSuccess, moveResult = pcall(function()
+            return Actor:K2_SetActorLocation(targetLocation, false, {}, true)
+        end)
+    end
 end
 
 --- Corrects the path separators in a given path string.

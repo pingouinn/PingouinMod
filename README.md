@@ -38,7 +38,7 @@ Complete teleportation system with absolute/relative position support and consol
 Advanced NoClip mode for player and vehicles with free camera management and custom controls
 
 #### [**Spawner.lua**](scripts/code/Spawner.lua)
-UE4 actor spawning system with entity tracking, garbage collection, and console commands (Spawn/DeleteAll)
+UE4 actor and StaticMesh spawning system with entity tracking, garbage collection, and console commands (Spawn/DeleteAll)
 
 ### 🔍 Debug Tools
 
@@ -77,7 +77,8 @@ Lua INI Parser for configuration file management
 
 - `pos` - Display current player position
 - `tp x y z` - Teleport player to specified coordinates
-- `Spawn <AssetPath>` - Spawn an actor from its asset path
+- `Spawn <AssetPath>` - Spawn an actor or a StaticMesh from its asset path
+- Example StaticMesh: `Spawn /Game/Environment/Props/S_Cone.S_Cone`
 - `DeleteAll` - Delete all spawned actors
 
 ### Keybinds
