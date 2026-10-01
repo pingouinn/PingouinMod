@@ -53,7 +53,7 @@ function Utils.GetPositionInFront(Position, Rotation, distance)
     local KsmMath = UEHelpers:GetKismetMathLibrary()
     if not KsmMath:IsValid() then print("[PingouinMod] KismetMathLibrary not valid\n") return Position end
     
-    local AddValue = KsmMath:Multiply_VectorInt(KsmMath:GetForwardVector(Rotation), distance)
+    local AddValue = KsmMath:Multiply_VectorFloat(KsmMath:GetForwardVector(Rotation), distance)
     local EndVector = KsmMath:Add_VectorVector(Position, AddValue)
     return EndVector
 end
