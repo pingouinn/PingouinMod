@@ -1,7 +1,7 @@
 WorldBoundaries = {}
 
 function WorldBoundaries.ToggleWorldBoundaries()
-    local player = UEHelpers:GetPlayer()
+    local player = Utils.GetPlayer()
     if not Utils.IsValidObject(player) then print("[PingouinMod] Player is not valid\n") return end
 
     -- TODO : Find a way buddy --> Will need entity outline before that

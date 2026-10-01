@@ -12,7 +12,7 @@ local savedPlayerState
 function GodMode.ToggleGodMode(player, forceState)
     if not player then
         -- TODO : Signature may change based on the actual player object class --> Find more robust way to get the player object
-        local firstPlayerController = UEHelpers:GetPlayerController()
+        local firstPlayerController = Utils.GetPlayerController()
         if not Utils.IsValidObject(firstPlayerController) then print("GodMode : Player controller is not valid\n") return end
         player = firstPlayerController.Pawn
     end

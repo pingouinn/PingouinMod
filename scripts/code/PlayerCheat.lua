@@ -10,7 +10,7 @@ local savedPlayerState
 
 function PlayerCheat.TogglePlayerCheatMode()
     -- TODO : Signature may change based on the actual player object class --> Find more robust way to get the player object
-    local firstPlayerController = UEHelpers:GetPlayerController()
+    local firstPlayerController = Utils.GetPlayerController()
     local player = firstPlayerController.Pawn
     if not Utils.IsValidObject(player) then print("PlayerAbilities : Player object is not valid\n") return end
     local charMoveComp = player.CharacterMovement 

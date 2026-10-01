@@ -48,6 +48,47 @@ function Utils.IsVehiclePawn(playerControllerOrCharacter)
     return Utils.IsValidObject(character.InVehicle) or character.bVehicleDriver == true
 end
 
+--- Returns if the given controller is a Debug Camera Controller.
+-- @param controller (UPlayerController) The player controller to check
+-- @return (boolean) True if the controller is a debug camera controller, false otherwise
+local function IsDebugCameraController(controller)
+    if not Utils.IsValidObject(controller) then return false end
+    local success, fullName = pcall(function() return controller:GetFullName() end)
+    return success and string.find(fullName, "DebugCameraController", 1, true) ~= nil
+end
+
+--- Retrieves the local player controller, ensuring it is valid and not a debug camera controller.
+-- @return (UPlayerController|nil) The local player controller, or nil if not found
+function Utils.GetPlayerController()
+    local success, currentController = pcall(function() return UEHelpers:GetPlayerController() end)
+    if success and Utils.IsValidObject(currentController) and not IsDebugCameraController(currentController) then
+        return currentController
+    end
+
+    for _, controller in ipairs(FindAllOf("PlayerController") or {}) do
+        local isLocalSuccess, isLocal = pcall(function() return controller:IsLocalPlayerController() end)
+        if Utils.IsValidObject(controller)
+            and not IsDebugCameraController(controller)
+            and isLocalSuccess and isLocal
+            and Utils.IsValidObject(controller.Pawn) then
+            return controller
+        end
+    end
+
+    return nil
+end
+
+--- Gets the local player pawn, ensuring it is valid.
+-- @return (APawn|nil) The local player pawn, or nil if not found
+function Utils.GetPlayer()
+    local success, player = pcall(function() return UEHelpers:GetPlayer() end)
+    if success and Utils.IsValidObject(player) then return player end
+
+    local playerController = Utils.GetPlayerController()
+    if playerController then return playerController.Pawn end
+    return nil
+end
+
 --- Enables the cheat manager for a given player controller, constructing it if necessary.
 --- @param playerController (UPlayerController) The player controller to enable the cheat manager for
 --- @return (boolean) True if the cheat manager is enabled or already present, false otherwise

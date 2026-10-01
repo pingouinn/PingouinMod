@@ -48,7 +48,7 @@ function Spawner.SpawnActor(ActorClassPath, verbose)
         return
     end
 
-    local player = UEHelpers:GetPlayer()
+    local player = Utils.GetPlayer()
     if not Utils.IsValidObject(player) then print("[PingouinMod] ERROR: Could not get local player.\n") return end
 
     -- Spawn the actor in front of the player

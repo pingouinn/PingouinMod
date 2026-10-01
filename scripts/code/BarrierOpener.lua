@@ -21,7 +21,7 @@ end
 -- Returns true when at least one valid barrier exists, false when none is loaded.
 
 function BarrierOpener.OpenBarriers(closeWhenFar)
-    local player = UEHelpers:GetPlayer()
+    local player = Utils.GetPlayer()
     if not Utils.IsValidObject(player) then return nil end
 
     if not Utils.IsVehiclePawn(player) then return nil end
