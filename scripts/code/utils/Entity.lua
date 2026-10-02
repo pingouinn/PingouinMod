@@ -138,4 +138,31 @@ function Entity.GetEntityKey(entity)
     return tostring(entity)
 end
 
+--- Retrieves the top-level entity for a given entity, considering ownership and attachment.
+-- @param entity (AActor|UObject) The entity to inspect
+-- @return (AActor|UObject) The top-level entity, or the original entity if no higher level is found
+function Entity.GetTopLevelEntity(entity)
+    if not Utils.IsValidObject(entity) then return entity end
+
+    local current = entity
+
+    -- If this entity has an owner, we traverse up to the owner to find the top-level entity.
+    if current.GetOwner then
+        local owner = current:GetOwner()
+        if Utils.IsValidObject(owner) then
+            current = owner
+        end
+    end
+
+    -- If this entity is attached to another actor, we traverse up to the parent actor to find the top-level entity.
+    if current.GetAttachParentActor then
+        local parentActor = current:GetAttachParentActor()
+        if Utils.IsValidObject(parentActor) then
+            current = parentActor
+        end
+    end
+
+    return current
+end
+
 return Entity
