@@ -165,4 +165,41 @@ function Entity.GetTopLevelEntity(entity)
     return current
 end
 
+--- Disables collision for a given entity, attempting multiple methods to ensure collision is turned off.
+-- @param entity (AActor|UObject) The entity to disable collision for
+-- @return (boolean) True if collision was successfully disabled, false otherwise
+function Entity.DisableEntityCollision(entity)
+    local disabled = false
+
+    if not Utils.IsValidObject(entity) then
+        print("[PingouinMod] Invalid entity provided for collision disable.\n")
+        return disabled
+    end
+
+    pcall(function()
+        if entity.SetActorEnableCollision then
+            entity:SetActorEnableCollision(false)
+            disabled = true
+            print("[PingouinMod] Collision disabled via SetActorEnableCollision.\n")
+        end
+    end)
+
+    if not disabled then
+        pcall(function()
+            if entity.SetCollisionEnabled then
+                -- 0 = ECollisionEnabled::NoCollision
+                entity:SetCollisionEnabled(0)
+                disabled = true
+                print("[PingouinMod] Collision disabled via SetCollisionEnabled(0).\n")
+            end
+        end)
+    end
+
+    if not disabled then
+        print("[PingouinMod] Could not disable collision on this entity.\n")
+    end
+
+    return disabled
+end
+
 return Entity
