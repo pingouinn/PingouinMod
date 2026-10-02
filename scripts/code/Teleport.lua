@@ -37,11 +37,7 @@ function Teleport.TeleportPawn(posTable, isOffset, rotTable, verbose, targetPawn
         -- Read the current location only when applying a relative offset.
         local positionSuccess, rawPosition = pcall(function() return pawn:K2_GetActorLocation() end)
         if not positionSuccess then return false end
-        local pos = {
-            X = Utils.ReadVectorComponent(rawPosition, "X"),
-            Y = Utils.ReadVectorComponent(rawPosition, "Y"),
-            Z = Utils.ReadVectorComponent(rawPosition, "Z"),
-        }
+        local pos = Utils.ReadVector(rawPosition)
         if not pos.X or not pos.Y or not pos.Z then return false end
         if verbose then
             print(string.format("[PingouinMod] Player location before TP : {X=%.3f, Y=%.3f, Z=%.3f}\n", pos.X, pos.Y, pos.Z))
@@ -52,11 +48,7 @@ function Teleport.TeleportPawn(posTable, isOffset, rotTable, verbose, targetPawn
     elseif verbose then
         local positionSuccess, rawPosition = pcall(function() return pawn:K2_GetActorLocation() end)
         if not positionSuccess then return false end
-        local pos = {
-            X = Utils.ReadVectorComponent(rawPosition, "X"),
-            Y = Utils.ReadVectorComponent(rawPosition, "Y"),
-            Z = Utils.ReadVectorComponent(rawPosition, "Z"),
-        }
+        local pos = Utils.ReadVector(rawPosition)
         if not pos.X or not pos.Y or not pos.Z then return false end
         print(string.format("[PingouinMod] Player location before TP : {X=%.3f, Y=%.3f, Z=%.3f}\n", pos.X, pos.Y, pos.Z))
     end
@@ -81,9 +73,10 @@ function Teleport.TeleportPawn(posTable, isOffset, rotTable, verbose, targetPawn
     -- Verify and report the final location for manual teleports.
     local newPositionSuccess, finalPos = pcall(function() return pawn:K2_GetActorLocation() end)
     if not newPositionSuccess or not finalPos then return false end
-    local finalX = Utils.ReadVectorComponent(finalPos, "X")
-    local finalY = Utils.ReadVectorComponent(finalPos, "Y")
-    local finalZ = Utils.ReadVectorComponent(finalPos, "Z")
+    local finalPosition = Utils.ReadVector(finalPos)
+    local finalX = finalPosition and finalPosition.X
+    local finalY = finalPosition and finalPosition.Y
+    local finalZ = finalPosition and finalPosition.Z
     if not finalX or not finalY or not finalZ then return false end
     print(ret, string.format("[PingouinMod] Player location after TP : {X=%.3f, Y=%.3f, Z=%.3f}\n", finalX, finalY, finalZ))
     return true

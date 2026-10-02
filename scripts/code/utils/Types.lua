@@ -40,6 +40,22 @@ function Types.ReadVectorComponent(vector, component)
     return Types.ReadNumber(value)
 end
 
+--- Reads and normalizes a three-dimensional vector.
+-- @param vector (FVector|UScriptStruct|table) The vector to read
+-- @return (table|nil) A table with numeric X, Y, and Z fields, or nil when invalid
+function Types.ReadVector(vector)
+    vector = Types.UnwrapValue(vector)
+    if not vector then return nil end
+    local x = Types.ReadVectorComponent(vector, "X")
+    local y = Types.ReadVectorComponent(vector, "Y")
+    local z = Types.ReadVectorComponent(vector, "Z")
+    if type(vector) == "table" then
+        x, y, z = x or Types.ReadNumber(vector[1]), y or Types.ReadNumber(vector[2]), z or Types.ReadNumber(vector[3])
+    end
+    if not x or not y or not z then return nil end
+    return {X = x, Y = y, Z = z}
+end
+
 --- Normalizes a vector represented as a table with named keys.
 -- @param value (table) The vector to normalize
 -- @param namedKeys (table) A table containing the names of the keys to use for the vector components
