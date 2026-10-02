@@ -2,6 +2,9 @@ local Types = require("code/utils/Types")
 local Entity = {}
 local DebugCameraControllerCache = CreateInvalidObject()
 
+--- Checks whether a controller belongs to the debug camera system.
+-- @param controller (UPlayerController) The controller to inspect
+-- @return (boolean) True when the controller is a debug camera controller
 local function IsDebugCameraController(controller)
     if not Types.IsValidObject(controller) then return false end
     local success, fullName = pcall(function() return controller:GetFullName() end)
@@ -39,6 +42,18 @@ function Entity.GetPlayer()
     local playerController = Entity.GetPlayerController()
     if playerController then return playerController.Pawn end
     return nil
+end
+
+--- Retrieves an actor's world location using the available Unreal accessor.
+-- @param actor (AActor) The actor whose location should be read
+-- @return (FVector|nil) The normalized world location, or nil when unavailable
+function Entity.GetActorLocation(actor)
+    if not Types.IsValidObject(actor) then return nil end
+    local success, location = pcall(function() return actor:K2_GetActorLocation() end)
+    if not success then
+        success, location = pcall(function() return actor:GetActorLocation() end)
+    end
+    return success and Types.ReadVector(location) or nil
 end
 
 --- Enables the cheat manager for a given player controller, constructing it if necessary.
