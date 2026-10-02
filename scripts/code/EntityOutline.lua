@@ -2,56 +2,86 @@ EntityOutline = {}
 
 EntityOutline.OutlinedEntities = {}
 
---- Adds or removes an outline effect on an entity by enabling or disabling custom depth rendering.
--- @param entity (AActor) The entity to modify
--- @param bEnabled (boolean) Whether to enable or disable the outline
--- @param stencilValue (number) The stencil value to use for the outline
-local function SetEntityCustomDepth(entity, bEnabled, stencilValue)
-    if not Utils.IsValidObject(entity) then return end
+-- TODO : Multicomponents like vehicles are not fully outlined, only the root component is outlined. We need to iterate over all components and their children to apply the outline effect.
 
-    -- If the entity has a SetRenderCustomDepth method, use it directly
-    if entity.SetRenderCustomDepth then
-        entity:SetRenderCustomDepth(bEnabled)
-        if bEnabled and stencilValue ~= nil then
-            entity:SetCustomDepthStencilValue(stencilValue)
+--- Enables or disables custom depth rendering on a component, optionally setting a stencil value.
+-- @param comp (UActorComponent) The component to modify
+-- @param bEnabled (boolean) Whether to enable or disable custom depth rendering
+-- @param stencilValue (number) The stencil value to use for custom depth rendering
+local function EnableCustomDepthOnComponent(comp, bEnabled, stencilValue)
+    if not Utils.IsValidObject(comp) then return end
+    if comp.SetRenderCustomDepth then
+        comp:SetRenderCustomDepth(bEnabled)
+        if bEnabled and stencilValue ~= nil and comp.SetCustomDepthStencilValue then
+            comp:SetCustomDepthStencilValue(stencilValue)
         end
-        return
     end
+end
 
-    -- If the entity doesn't have a SetRenderCustomDepth method, attempt to find its mesh component and apply the outline effect on it
-    local meshClass = StaticFindObject("/Script/Engine.MeshComponent")
-    if not meshClass then
-        meshClass = StaticFindObject("/Script/Engine.PrimitiveComponent")
-    end
+--- Enables or disables custom depth rendering on a component and its attached children.
+-- @param comp (UActorComponent) The component to modify
+-- @param bEnabled (boolean) Whether to enable or disable custom depth rendering
+-- @param stencilValue (number) The stencil value to use for custom depth rendering
+local function ProcessComponentHierarchy(comp, bEnabled, stencilValue)
+    if not Utils.IsValidObject(comp) then return end
 
-    if meshClass and entity.GetComponentsByClass then
-        local components = entity:GetComponentsByClass(meshClass)
-        if components then
-            -- If the components collection has a ForEach method, use it; otherwise, iterate over the table.
-            if components.ForEach then
-                components:ForEach(function(index, comp)
-                    if Utils.IsValidObject(comp) and comp.SetRenderCustomDepth then
-                        comp:SetRenderCustomDepth(bEnabled)
-                        if bEnabled and stencilValue ~= nil then
-                            comp:SetCustomDepthStencilValue(stencilValue)
-                        end
-                    end
-                end)
-            elseif type(components) == "table" then
-                for _, comp in ipairs(components) do
-                    if Utils.IsValidObject(comp) and comp.SetRenderCustomDepth then
-                        comp:SetRenderCustomDepth(bEnabled)
-                        if bEnabled and stencilValue ~= nil then
-                            comp:SetCustomDepthStencilValue(stencilValue)
-                        end
-                    end
-                end
+    EnableCustomDepthOnComponent(comp, bEnabled, stencilValue)
+
+    -- AttachChildren contient tous les composants (meshs, roues, cabine, etc.) attachés
+    if comp.AttachChildren then
+        local children = comp.AttachChildren
+        if children.ForEach then
+            children:ForEach(function(index, child)
+                ProcessComponentHierarchy(child, bEnabled, stencilValue)
+            end)
+        elseif type(children) == "table" then
+            for _, child in ipairs(children) do
+                ProcessComponentHierarchy(child, bEnabled, stencilValue)
             end
         end
     end
 end
 
--- Adds an outline effect to an entity.
+--- Applies or removes an outline effect on an entity by enabling or disabling custom depth rendering on its components and attached children.
+-- @param entity (AActor) The entity to modify
+-- @param bEnabled (boolean) Whether to enable or disable the outline effect
+-- @param stencilValue (number) The stencil value to use for the outline effect
+local function ApplyCustomDepthToActor(actor, bEnabled, stencilValue)
+    if not Utils.IsValidObject(actor) then return end
+
+    -- If the actor has a root component, we process it and its hierarchy
+    if actor.RootComponent and Utils.IsValidObject(actor.RootComponent) then
+        ProcessComponentHierarchy(actor.RootComponent, bEnabled, stencilValue)
+    else
+        -- If the actor has no root component, we can try to process all its components directly
+        ProcessComponentHierarchy(actor, bEnabled, stencilValue)
+    end
+
+    -- We also check for attached child actors and apply the same logic recursively
+    if actor.Children then
+        local childrenActors = actor.Children
+        if childrenActors.ForEach then
+            childrenActors:ForEach(function(index, childActor)
+                ApplyCustomDepthToActor(childActor, bEnabled, stencilValue)
+            end)
+        elseif type(childrenActors) == "table" then
+            for _, childActor in ipairs(childrenActors) do
+                ApplyCustomDepthToActor(childActor, bEnabled, stencilValue)
+            end
+        end
+    end
+end
+
+--- Adds or removes an outline effect on a whole entity by enabling or disabling custom depth rendering.
+-- @param entity (AActor) The entity to modify
+-- @param bEnabled (boolean) Whether to enable or disable the outline
+-- @param stencilValue (number) The stencil value to use for the outline
+local function SetEntityCustomDepth(entity, bEnabled, stencilValue)
+    local topEntity = Utils.GetTopLevelEntity(entity)
+    ApplyCustomDepthToActor(topEntity, bEnabled, stencilValue)
+end
+
+--- Adds an outline effect to an entity.
 -- @param entity (AActor) The entity to add an outline to
 -- @param stencilValue (number) The stencil value to use for the outline
 function EntityOutline.AddEntityOutline(entity, stencilValue)
