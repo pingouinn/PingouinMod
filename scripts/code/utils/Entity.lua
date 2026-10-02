@@ -124,4 +124,18 @@ function Entity.ResolveStaticMesh(assetPath, fallbackAsset)
     return fallbackAsset
 end
 
+--- Generates a unique key for an entity based on its address or full name.
+-- @param entity (AActor|UObject) The entity to generate a key for
+-- @return (string|nil) A unique string key for the entity, or nil if the entity is invalid
+function Entity.GetEntityKey(entity)
+    if not Utils.IsValidObject(entity) then return nil end
+    if entity.GetAddress then
+        return tostring(entity:GetAddress())
+    end
+    if entity.GetFullName then
+        return entity:GetFullName()
+    end
+    return tostring(entity)
+end
+
 return Entity
