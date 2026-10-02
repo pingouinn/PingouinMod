@@ -4,16 +4,6 @@ local Math = require("code/utils/Math")
 local Entity = require("code/utils/Entity")
 local World = {}
 
--- Variables 
-
-local TRACE_CHANNELS = {
-    [1] = 0,
-    [2] = 1,
-    [3] = 2,
-    [4] = 3,
-    [5] = 4,
-}
-
 
 --- Finds the first blocking surface below a world position.
 -- @param Actor (AActor) The actor ignored by the trace
@@ -213,15 +203,13 @@ function World.PerformRaycast(Position, Pawn, Camera, Direction, Rotation, Lengt
         if not alreadyIgnored then table.insert(actorsToIgnore, Pawn) end
     end
 
-    local traceChannel = TRACE_CHANNELS[tonumber(TraceChannel) or 4]
-    if traceChannel == nil then traceChannel = TRACE_CHANNELS[4] end
-
     -- Draw debug related stuff
     local drawDebug = DrawDebug
     if type(drawDebug) == "boolean" then drawDebug = drawDebug and 1 or 0 end
     drawDebug = tonumber(drawDebug) or 0
     local traceColor = TraceColor or {R = 0, G = 255, B = 0, A = 255}
     local traceHitColor = TraceHitColor or {R = 255, G = 0, B = 0, A = 255}
+    local traceChannel = tonumber(TraceChannel) or 4
 
     -- The native call is protected because invalid UE objects can throw errors and fuck the whole trace (not happend one nor twice. SEVERAL TIMES)
     local hitResult = {}
