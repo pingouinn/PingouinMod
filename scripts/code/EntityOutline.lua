@@ -11,11 +11,14 @@ local Spawner = require("code/Spawner")
 -- @param stencilValue (number) The stencil value to use for custom depth rendering
 local function EnableCustomDepthOnComponent(comp, bEnabled, stencilValue)
     if not Utils.IsValidObject(comp) then return end
+
     if comp.SetRenderCustomDepth then
-        comp:SetRenderCustomDepth(bEnabled)
-        if bEnabled and stencilValue ~= nil and comp.SetCustomDepthStencilValue then
-            comp:SetCustomDepthStencilValue(stencilValue)
-        end
+        pcall(function()
+            comp:SetRenderCustomDepth(bEnabled)
+            if bEnabled and stencilValue ~= nil and comp.SetCustomDepthStencilValue then
+                comp:SetCustomDepthStencilValue(stencilValue)
+            end
+        end)
     end
 end
 
