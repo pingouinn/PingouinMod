@@ -2,7 +2,10 @@ local Spawner = {}
 
 Spawner.entitytracker = {}
 
--- Detect meshes by path or reflected type.
+--- Detect meshes by path or reflected type.
+-- @param asset (UObject) The asset to inspect
+-- @param assetPath (string) The full Unreal asset path
+-- @return (boolean) True when the asset is a StaticMesh
 local function IsStaticMeshAsset(asset, assetPath)
     if not Utils.IsValidObject(asset) then return false end
 
@@ -17,6 +20,9 @@ end
 
 -- Resolve a typed mesh reference before passing it to SetStaticMesh.
 -- Asset loading can be asynchronous, so retry a few times.
+-- @param assetPath (string) The full Unreal asset path
+-- @param verbose (boolean) Whether to print debug messages
+-- @return (UStaticMesh|nil) The resolved mesh reference, or nil if not found
 local function LoadAssetWithRetries(assetPath, verbose)
     local maxRetries = 5
     local loadedAsset
@@ -38,9 +44,14 @@ local function LoadAssetWithRetries(assetPath, verbose)
     return nil
 end
 
+--- Spawns an actor of the specified class in front of the player.
+-- @param ActorClassPath (string) The full Unreal asset path of the actor class
+-- @param verbose (boolean) Whether to print debug messages
+-- @return (AActor|nil) The spawned actor, or nil if spawning failed
 function Spawner.SpawnActor(ActorClassPath, verbose)
     verbose = verbose or false
     print("[PingouinMod] Spawning actor of class : " .. ActorClassPath .. "\n")
+    local spawnedComponents = {}
 
     local loadedAsset = LoadAssetWithRetries(ActorClassPath, verbose)
     if not loadedAsset then
@@ -128,6 +139,7 @@ function Spawner.SpawnActor(ActorClassPath, verbose)
         pcall(function() Actor:SetActorHiddenInGame(false) end)
         pcall(function() meshComponent:SetVisibility(true, true) end)
         pcall(function() meshComponent:MarkRenderStateDirty() end)
+        table.insert(spawnedComponents, meshComponent)
     end
     
     if verbose then print(string.format("[PingouinMod] Successfully spawned actor [0x%X] of class: %s\n", Actor:GetAddress(), Actor.ClassName)) end
@@ -145,11 +157,15 @@ function Spawner.SpawnActor(ActorClassPath, verbose)
         address = Actor:GetAddress(),
         className = Actor.ClassName, 
         registeredDeletion = false,
+        components = spawnedComponents,
     }
 
     return Actor
 end
 
+--- Deletes an actor and cleans up its tracking.
+-- @param Actor (AActor) The actor to delete
+-- @param verbose (boolean) Whether to print debug messages
 function Spawner.DeleteActor(Actor, verbose)
     verbose = verbose or false
     if not Utils.IsValidObject(Actor) then print("[PingouinMod] ERROR: Attempted to delete an invalid actor.\n") return end
@@ -186,6 +202,8 @@ function Spawner.DeleteActor(Actor, verbose)
     return success
 end
 
+--- Performs garbage collection on the entity tracker, removing invalid actors.
+-- @return (boolean) Always returns false to indicate the GC process is complete
 function Spawner.GC()
     for actor, infos in pairs(Spawner.entitytracker) do
         if not Utils.IsValidObject(actor) then

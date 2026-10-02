@@ -1,6 +1,7 @@
 EntityOutline = {}
 
 EntityOutline.OutlinedEntities = {}
+local Spawner = require("code/Spawner")
 
 -- TODO : Multicomponents like vehicles are not fully outlined, only the root component is outlined. We need to iterate over all components and their children to apply the outline effect.
 
@@ -49,12 +50,16 @@ end
 local function ApplyCustomDepthToActor(actor, bEnabled, stencilValue)
     if not Utils.IsValidObject(actor) then return end
 
+    local entityInfo = Spawner.entitytracker[actor]
+    if entityInfo and entityInfo.components then
+        for _, component in ipairs(entityInfo.components) do
+            ProcessComponentHierarchy(component, bEnabled, stencilValue)
+        end
+    end
+
     -- If the actor has a root component, we process it and its hierarchy
     if actor.RootComponent and Utils.IsValidObject(actor.RootComponent) then
         ProcessComponentHierarchy(actor.RootComponent, bEnabled, stencilValue)
-    else
-        -- If the actor has no root component, we can try to process all its components directly
-        ProcessComponentHierarchy(actor, bEnabled, stencilValue)
     end
 
     -- We also check for attached child actors and apply the same logic recursively
@@ -77,6 +82,12 @@ end
 -- @param bEnabled (boolean) Whether to enable or disable the outline
 -- @param stencilValue (number) The stencil value to use for the outline
 local function SetEntityCustomDepth(entity, bEnabled, stencilValue)
+    -- A trace can return the mesh component itself instead of its actor.
+    -- Process it before resolving the top-level actor.
+    if entity.SetRenderCustomDepth then
+        ProcessComponentHierarchy(entity, bEnabled, stencilValue)
+    end
+
     local topEntity = Utils.GetTopLevelEntity(entity)
     ApplyCustomDepthToActor(topEntity, bEnabled, stencilValue)
 end
