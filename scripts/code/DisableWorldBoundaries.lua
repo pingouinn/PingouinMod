@@ -1,7 +1,5 @@
 WorldBoundaries = {}
 
-
-
 local BOUNDARY_ACTOR_CLASSES = {
     "BP_PCGSplineFence_C", -- TODO : This deletes all the fences, maybe we can add a way to check only for the blocking ones
 }
