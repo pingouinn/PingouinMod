@@ -5,7 +5,7 @@ Constants = require("code/Constants")
 
 
 -- Make an exception for the utils module to be loaded first because we depend on it
-Utils = require("code/Utils")
+Utils = require("code/utils/Utils")
 
 ---- Dependencies -----
 LIP = require("dependencies/LIP") -- Lua INI Parser

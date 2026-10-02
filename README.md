@@ -18,8 +18,14 @@ The main goal is to create a reusable abstraction layer that simplifies interact
 
 ### 🛠️ Utility Scripts
 
-#### [**Utils.lua**](scripts/code/Utils.lua)
-Essential utility functions module: CheatManager management, vector calculations, file paths, and UE4SS helpers
+#### Utility modules
+The utility API is exposed through [**Utils.lua**](scripts/code/utils/Utils.lua), split into focused modules:
+
+- [**Types.lua**](scripts/code/utils/Types.lua): UE4SS values, objects, and vector normalization
+- [**Math.lua**](scripts/code/utils/Math.lua): vector calculations and position comparisons
+- [**Entity.lua**](scripts/code/utils/Entity.lua): players, controllers, cheat managers, and static meshes
+- [**World.lua**](scripts/code/utils/World.lua): traces and surface placement
+- [**Path.lua**](scripts/code/utils/Path.lua): paths and UE4SS dump loading
 
 #### [**ShortNamingUtils.lua**](scripts/code/ShortNamingUtils.lua)
 Short naming system to simplify Unreal asset invocation with automatic path resolution
@@ -90,7 +96,13 @@ The mod uses a modular architecture where each feature is isolated in its own mo
 
 ```
 main.lua (Entry Point)
-    ├── Utils.lua (Base utilities)
+    └── utils/
+        ├── Utils.lua (Utility API facade)
+        ├── Types.lua
+        ├── Math.lua
+        ├── Entity.lua
+        ├── World.lua
+        └── Path.lua
     ├── LIP.lua (INI Parser)
     └── Feature Modules
         ├── PlayerCheat
