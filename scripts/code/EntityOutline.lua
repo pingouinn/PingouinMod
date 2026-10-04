@@ -180,6 +180,22 @@ function EntityOutline.ToggleRaycastedEntityOutline(stencilValue)
     EntityOutline.AddEntityOutline(entity, stencilValue or 0, key)
 end
 
+-- Returns the table of currently outlined entities.
+-- @return (table) A table containing the currently outlined entities, indexed by their unique keys
+function EntityOutline.GetOutlinedEntities()
+    return EntityOutline.OutlinedEntities
+end
+
+-- Clears all outlines from entities and resets the outlined entities table.
+function EntityOutline.ClearAllOutlines()
+    for key, entity in pairs(EntityOutline.OutlinedEntities) do
+        if Utils.IsValidObject(entity) then
+            SetEntityCustomDepth(entity, false, 0)
+        end
+        EntityOutline.OutlinedEntities[key] = nil
+    end
+end
+
 --- Performs garbage collection on the outlined entities.
 function EntityOutline.GC()
     for key, entity in pairs(EntityOutline.OutlinedEntities) do
