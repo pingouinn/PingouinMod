@@ -39,14 +39,23 @@ Keybinds = {
 MOD_FOLDER = Utils.GetModFolder(clean_script_path)
 print("[PingouinMod] Mod folder path: " .. MOD_FOLDER .. "\n")
 
+
+-- TODO : Automatically detect scripts instead of hardcoding the list of scripts to load. 
+
 ------ File imports ------
+
+-- Sys
+
+ShortNaming = require("code/system/ShortNamingUtils")
+GCScheduler = require("code/system/GCScheduler")
+
+-- Gameplay
 
 PlayerCheat = require("code/PlayerCheat")
 Teleport = require("code/Teleport")
 GodMode = require("code/GodMode")
 NoClip = require("code/NoClip")
 Spawner = require("code/Spawner")
-ShortNaming = require("code/ShortNamingUtils")
 DisableWorldBoundaries = require("code/DisableWorldBoundaries")
 EntityOutline = require("code/EntityOutline")
 BarrierOpener = require("code/BarrierOpener")
