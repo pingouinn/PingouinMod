@@ -33,6 +33,7 @@ Keybinds = {
 	EntityOutline = ResolveConfiguredKey("EntityOutlineKey", "F6"),
 	GodMode = ResolveConfiguredKey("GodModeKey", "F7"),
 	Collision = ResolveConfiguredKey("CollisionKey", "F8"),
+	EntitySelector = ResolveConfiguredKey("EntitySelectorKey", "F9"),
 }
 
 MOD_FOLDER = Utils.GetModFolder(clean_script_path)
@@ -50,6 +51,7 @@ DisableWorldBoundaries = require("code/DisableWorldBoundaries")
 EntityOutline = require("code/EntityOutline")
 BarrierOpener = require("code/BarrierOpener")
 CollisionDeactivator = require("code/CollisionDeactivator")
+EntitySelector = require("code/EntitySelector")
 
 WildFire = Utils.RequireUE4SSDump(MOD_FOLDER .. "/shared/types/Wildfire.lua")
 if WildFire == nil then print("[PingouinMod] ERROR: Failed to load Wildfire UE4SS dump\n") end
