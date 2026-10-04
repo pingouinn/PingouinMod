@@ -1,5 +1,8 @@
 CollisionDeactivator = {}
 
+-- TODO : When collision deactivated, the entity should be added to a list of entities with disabled collision
+-- TODO : Find a way to detect back via raycast disabled collision entities
+
 --- Toggles the collision of the element in front of the player.
 -- @param verbose (boolean) If true, prints detailed information about the hit entity and its resolved target.
 function CollisionDeactivator.ToggleElementCollisionInFront(verbose)
