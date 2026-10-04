@@ -116,7 +116,6 @@ RegisterConsoleCommandHandler("tp", function(fullCommand, args, _)
 
     local pos = {args[1], args[2], args[3]}
 
-    -- Execute Unreal calls on the game thread and report failures there.
     ExecuteInGameThread(function()
         if not Teleport.TeleportPawn(pos, isOffset) then
             print("[PingouinMod] ERROR : Teleport failed\n")

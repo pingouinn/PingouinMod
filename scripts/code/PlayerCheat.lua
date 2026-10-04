@@ -8,6 +8,7 @@ PlayerCheat.isPlayerCheating = false
 local movementLoopHandle
 local savedPlayerState
 
+--- Toggles the player cheat mode state, granting or removing special abilities.
 function PlayerCheat.TogglePlayerCheatMode()
     -- TODO : Signature may change based on the actual player object class --> Find more robust way to get the player object
     local firstPlayerController = Utils.GetPlayerController()

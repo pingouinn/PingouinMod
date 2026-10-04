@@ -9,9 +9,11 @@ local savedPlayerState
 
 -- TODO : Need to implement other godmode features
 
+--- Toggles the god mode state for the player.
+-- @param player (AActor) The player actor to toggle god mode for. If nil, the function will attempt to retrieve the player actor.
+-- @param forceState (boolean) If provided, forces the god mode state to the specified value (true for enabled, false for disabled). If nil, the function will toggle the current state.
 function GodMode.ToggleGodMode(player, forceState)
     if not player then
-        -- TODO : Signature may change based on the actual player object class --> Find more robust way to get the player object
         local firstPlayerController = Utils.GetPlayerController()
         if not Utils.IsValidObject(firstPlayerController) then print("GodMode : Player controller is not valid\n") return end
         player = firstPlayerController.Pawn
