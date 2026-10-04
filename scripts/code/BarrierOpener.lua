@@ -9,14 +9,6 @@ local waitingForLevel = false
 local searchLoopRunning = false
 local NO_BARRIER_CHECK_LIMIT = 5
 
-local function GetBarrierKey(barrier)
-    local success, address = pcall(function()
-        return barrier:GetAddress()
-    end)
-    if success and address then return address end
-    return tostring(barrier)
-end
-
 -- Opens nearby barriers and optionally closes them when the player moves away.
 -- Returns true when at least one valid barrier exists, false when none is loaded.
 
@@ -26,7 +18,8 @@ function BarrierOpener.OpenBarriers(closeWhenFar)
 
     if not Utils.IsVehiclePawn(player) then return nil end
 
-    local playerPos = player:K2_GetActorLocation()
+    local playerPos = Utils.GetActorLocation(player)
+    if not playerPos then return nil end
 
     local barriers = FindAllOf("BP_Gate_C")
     if not barriers then return false end
@@ -35,19 +28,21 @@ function BarrierOpener.OpenBarriers(closeWhenFar)
     for _, barrier in ipairs(barriers) do
         if Utils.IsValidObject(barrier) then
             validBarrierFound = true
-            local barrierPos = barrier:K2_GetActorLocation()
-            local distance = math.sqrt((playerPos.X - barrierPos.X)^2 + (playerPos.Y - barrierPos.Y)^2 + (playerPos.Z - barrierPos.Z)^2)
-            local WFDoor = barrier.WFDoor
-            if Utils.IsValidObject(WFDoor) then
-                local barrierKey = GetBarrierKey(barrier)
-                local state = barrierStates[barrierKey]
+            local barrierPos = Utils.GetActorLocation(barrier)
+            if barrierPos then
+                local distance = math.sqrt((playerPos.X - barrierPos.X)^2 + (playerPos.Y - barrierPos.Y)^2 + (playerPos.Z - barrierPos.Z)^2)
+                local WFDoor = barrier.WFDoor
+                if Utils.IsValidObject(WFDoor) then
+                    local barrierKey = Utils.GetEntityKey(barrier)
+                    local state = barrierStates[barrierKey]
 
-                if distance <= 1500.0 and state ~= "open" then
-                    WFDoor:StartOpeningDoorServer(WFDoor.OpeningCurve, WFDoor.DoorMovingSpeedRate)
-                    barrierStates[barrierKey] = "open"
-                elseif closeWhenFar and distance > 2000.0 and state ~= "closed" then
-                    WFDoor:StartClosingDoorServer(WFDoor.ClosingCurve, WFDoor.DoorMovingSpeedRate)
-                    barrierStates[barrierKey] = "closed"
+                    if distance <= 1500.0 and state ~= "open" then
+                        WFDoor:StartOpeningDoorServer(WFDoor.OpeningCurve, WFDoor.DoorMovingSpeedRate)
+                        barrierStates[barrierKey] = "open"
+                    elseif closeWhenFar and distance > 2000.0 and state ~= "closed" then
+                        WFDoor:StartClosingDoorServer(WFDoor.ClosingCurve, WFDoor.DoorMovingSpeedRate)
+                        barrierStates[barrierKey] = "closed"
+                    end
                 end
             end
         end
