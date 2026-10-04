@@ -10,8 +10,8 @@ local searchLoopRunning = false
 local NO_BARRIER_CHECK_LIMIT = 5
 
 -- Opens nearby barriers and optionally closes them when the player moves away.
--- Returns true when at least one valid barrier exists, false when none is loaded.
-
+-- @param closeWhenFar (boolean) If true, barriers will close when the player is far away.
+-- @return (boolean) True if at least one barrier was found and processed, false if no barriers were found, nil if the player is not in a vehicle.
 function BarrierOpener.OpenBarriers(closeWhenFar)
     local player = Utils.GetPlayer()
     if not Utils.IsValidObject(player) then return nil end
@@ -51,6 +51,7 @@ function BarrierOpener.OpenBarriers(closeWhenFar)
     return validBarrierFound
 end
 
+-- Starts the barrier search loop.
 local function StartBarrierSearch()
     if searchLoopRunning then return end
     searchLoopRunning = true
@@ -88,6 +89,5 @@ RegisterLoadMapPostHook(function()
 end)
 
 StartBarrierSearch()
-
 
 return BarrierOpener
