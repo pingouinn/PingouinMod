@@ -145,21 +145,24 @@ function Entity.GetTopLevelEntity(entity)
     if not Utils.IsValidObject(entity) then return entity end
 
     local current = entity
+    local visited = {}
 
-    -- If this entity has an owner, we traverse up to the owner to find the top-level entity.
-    if current.GetOwner then
-        local owner = current:GetOwner()
-        if Utils.IsValidObject(owner) then
-            current = owner
-        end
-    end
+    while Utils.IsValidObject(current) and not visited[current] do
+        visited[current] = true
+        local parent = nil
 
-    -- If this entity is attached to another actor, we traverse up to the parent actor to find the top-level entity.
-    if current.GetAttachParentActor then
-        local parentActor = current:GetAttachParentActor()
-        if Utils.IsValidObject(parentActor) then
-            current = parentActor
+        if current.GetOwner then
+            local success, owner = pcall(function() return current:GetOwner() end)
+            if success and Utils.IsValidObject(owner) then parent = owner end
         end
+
+        if not parent and current.GetAttachParentActor then
+            local success, parentActor = pcall(function() return current:GetAttachParentActor() end)
+            if success and Utils.IsValidObject(parentActor) then parent = parentActor end
+        end
+
+        if not parent then break end
+        current = parent
     end
 
     return current
