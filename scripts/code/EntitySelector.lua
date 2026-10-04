@@ -112,6 +112,8 @@ function EntitySelector.GC()
     end
 end
 
+GCScheduler.RegisterGC(EntitySelector.GC, 5.0, true)
+
 RegisterKeyBind(Keybinds.EntitySelector, function()
     print("[PingouinMod] Selecting entity\n")
     ExecuteInGameThread(function()

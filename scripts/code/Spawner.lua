@@ -271,9 +271,7 @@ RegisterConsoleCommandHandler("GetInfosInternal", function(fullCommand, args, _)
     return false
 end)
 
--- Periodic GC to clean up invalid actors from the tracker
-LoopAsync(500, function()
-    Spawner.GC()
-end)
+-- Periodic GC to clean up invalid actors from the tracker.
+GCScheduler.RegisterGC(Spawner.GC, 0.5, false)
 
 return Spawner

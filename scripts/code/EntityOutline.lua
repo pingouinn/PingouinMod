@@ -205,6 +205,8 @@ function EntityOutline.GC()
     end
 end
 
+GCScheduler.RegisterGC(EntityOutline.GC, 5.0, true)
+
 RegisterKeyBind(Keybinds.EntityOutline, function()
     print("[PingouinMod] Displaying raycasted entity outline\n")
     ExecuteInGameThread(function()
