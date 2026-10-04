@@ -63,9 +63,14 @@ function Entity.GetObjectName(object)
     if not object then return nil end
 
     local success, name = pcall(function()
-        if object.GetName then return object:GetName() end
-        if object.GetFullName then return object:GetFullName() end
+        if object.GetName then  return object:GetName() end
     end)
+
+    if not success or not name then
+        success, name = pcall(function()
+            if object.GetFullName then return object:GetFullName() end
+        end)
+    end
 
     return success and name and tostring(name) or nil
 end
