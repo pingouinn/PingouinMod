@@ -3,6 +3,13 @@ EntityOutline = {}
 EntityOutline.OutlinedEntities = {}
 local Spawner = require("code/Spawner")
 
+-- Checks if an error message indicates an unsupported custom depth error.
+-- @param errorMessage (string) The error message to check
+-- @return (boolean) True if the error message indicates an unsupported custom depth error, false otherwise
+local function IsUnsupportedCustomDepthError(errorMessage)
+    return string.find(tostring(errorMessage), "TrivialObject", 1, true) ~= nil
+end
+
 --- Enables or disables custom depth rendering on a component, optionally setting a stencil value.
 -- @param comp (UActorComponent) The component to modify
 -- @param bEnabled (boolean) Whether to enable or disable custom depth rendering
@@ -17,7 +24,7 @@ local function EnableCustomDepthOnComponent(comp, bEnabled, stencilValue)
                 comp:SetCustomDepthStencilValue(stencilValue)
             end
         end)
-        if not success then
+        if not success and not IsUnsupportedCustomDepthError(errorMessage) then
             print(string.format("[PingouinMod] Failed to update custom depth on component: %s\n", tostring(errorMessage)))
         end
     end
@@ -28,6 +35,7 @@ end
 -- @param bEnabled (boolean) Whether to enable or disable custom depth rendering
 -- @param stencilValue (number) The stencil value to use for custom depth rendering
 local function ProcessComponentHierarchy(comp, bEnabled, stencilValue, visited)
+    comp = Utils.UnwrapValue(comp)
     if not Utils.IsValidObject(comp) then return end
     if visited[comp] then return end
     visited[comp] = true
@@ -38,11 +46,17 @@ local function ProcessComponentHierarchy(comp, bEnabled, stencilValue, visited)
         local children = comp.AttachChildren
         if children.ForEach then
             children:ForEach(function(index, child)
-                ProcessComponentHierarchy(child, bEnabled, stencilValue, visited)
+                local success, unwrappedChild = pcall(function() return Utils.UnwrapValue(child) end)
+                if unwrappedChild then
+                    ProcessComponentHierarchy(unwrappedChild, bEnabled, stencilValue, visited)
+                end
             end)
         elseif type(children) == "table" then
             for _, child in ipairs(children) do
-                ProcessComponentHierarchy(child, bEnabled, stencilValue, visited)
+                local success, unwrappedChild = pcall(function() return Utils.UnwrapValue(child) end)
+                if unwrappedChild then
+                    ProcessComponentHierarchy(unwrappedChild, bEnabled, stencilValue, visited)
+                end
             end
         end
     end
@@ -53,6 +67,7 @@ end
 -- @param bEnabled (boolean) Whether to enable or disable the outline effect
 -- @param stencilValue (number) The stencil value to use for the outline effect
 local function ApplyCustomDepthToActor(actor, bEnabled, stencilValue, visited)
+    actor = Utils.UnwrapValue(actor)
     if not Utils.IsValidObject(actor) then return end
     if visited[actor] then return end
     visited[actor] = true
@@ -74,11 +89,17 @@ local function ApplyCustomDepthToActor(actor, bEnabled, stencilValue, visited)
         local childrenActors = actor.Children
         if childrenActors.ForEach then
             childrenActors:ForEach(function(index, childActor)
-                ApplyCustomDepthToActor(childActor, bEnabled, stencilValue, visited)
+                local success, unwrappedChild = pcall(function() return Utils.UnwrapValue(child) end)
+                if unwrappedChild then
+                    ProcessComponentHierarchy(unwrappedChild, bEnabled, stencilValue, visited)
+                end
             end)
         elseif type(childrenActors) == "table" then
             for _, childActor in ipairs(childrenActors) do
-                ApplyCustomDepthToActor(childActor, bEnabled, stencilValue, visited)
+                local success, unwrappedChild = pcall(function() return Utils.UnwrapValue(child) end)
+                if unwrappedChild then
+                    ProcessComponentHierarchy(unwrappedChild, bEnabled, stencilValue, visited)
+                end
             end
         end
     end
@@ -89,25 +110,29 @@ end
 -- @param bEnabled (boolean) Whether to enable or disable the outline
 -- @param stencilValue (number) The stencil value to use for the outline
 local function SetEntityCustomDepth(entity, bEnabled, stencilValue)
+    entity = Utils.UnwrapValue(entity)
     local visited = {}
+    local topEntity = Utils.GetTopLevelEntity(entity)
 
-    -- A trace can return the mesh component itself instead of its actor.
-    -- Process it before resolving the top-level actor.
-    if entity.SetRenderCustomDepth then
+    -- Resolve the logical actor first, then traverse all of its components and children.
+    ApplyCustomDepthToActor(topEntity, bEnabled, stencilValue, visited)
+
+    -- Process a standalone hit component only when the actor traversal did not cover it.
+    if entity ~= topEntity and entity.SetRenderCustomDepth then
         ProcessComponentHierarchy(entity, bEnabled, stencilValue, visited)
     end
-
-    local topEntity = Utils.GetTopLevelEntity(entity)
-    ApplyCustomDepthToActor(topEntity, bEnabled, stencilValue, visited)
 end
 
 --- Adds an outline effect to an entity.
 -- @param entity (AActor) The entity to add an outline to
 -- @param stencilValue (number) The stencil value to use for the outline
-function EntityOutline.AddEntityOutline(entity, stencilValue)
+function EntityOutline.AddEntityOutline(entity, stencilValue, key)
     local topEntity = Utils.GetTopLevelEntity(entity)
-    local key = Utils.GetEntityKey(topEntity)
-    if not key then return end
+
+    if not key then
+        key = Utils.GetEntityKey(topEntity)
+        if not key then return end
+    end
 
     stencilValue = stencilValue or 0
     SetEntityCustomDepth(entity, true, stencilValue)
@@ -152,7 +177,7 @@ function EntityOutline.ToggleRaycastedEntityOutline(stencilValue)
     end
 
     print("[PingouinMod] Adding outline to entity\n")
-    EntityOutline.AddEntityOutline(entity, stencilValue or 0)
+    EntityOutline.AddEntityOutline(entity, stencilValue or 0, key)
 end
 
 --- Performs garbage collection on the outlined entities.
