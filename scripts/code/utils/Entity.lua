@@ -56,6 +56,33 @@ function Entity.GetActorLocation(actor)
     return success and Types.ReadVector(location) or nil
 end
 
+--- Retrieves an object's name using the most specific available Unreal accessor.
+-- @param object (UObject) The object to inspect
+-- @return (string|nil) The object name, or nil when unavailable
+function Entity.GetObjectName(object)
+    if not object then return nil end
+
+    local success, name = pcall(function()
+        if object.GetName then return object:GetName() end
+        if object.GetFullName then return object:GetFullName() end
+    end)
+
+    return success and name and tostring(name) or nil
+end
+
+--- Checks whether an object's name matches an expected name, allowing Unreal numeric suffixes.
+-- @param object (UObject) The object to inspect
+-- @param expectedName (string) The expected object name
+-- @return (boolean) True when the object name matches
+function Entity.HasObjectName(object, expectedName)
+    local name = Entity.GetObjectName(object)
+    if not name or not expectedName then return false end
+
+    name = string.lower(name)
+    expectedName = string.lower(expectedName)
+    return name == expectedName or string.match(name, "^" .. expectedName .. "_%d+$") ~= nil
+end
+
 --- Enables the cheat manager for a given player controller, constructing it if necessary.
 --- @param playerController (UPlayerController) The player controller to enable the cheat manager for
 --- @return (boolean) True if the cheat manager is enabled or already present, false otherwise
