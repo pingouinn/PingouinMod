@@ -202,6 +202,18 @@ function Spawner.DeleteActor(Actor, verbose)
     return success
 end
 
+--- Retrieves all currently tracked actors from the entity tracker.
+-- @return (table) A list of all valid tracked actors
+function Spawner.GetAllTrackedActors()
+    local trackedActors = {}
+    for actor, _ in pairs(Spawner.entitytracker) do
+        if Utils.IsValidObject(actor) then
+            table.insert(trackedActors, actor)
+        end
+    end
+    return trackedActors
+end
+
 --- Performs garbage collection on the entity tracker, removing invalid actors.
 -- @return (boolean) Always returns false to indicate the GC process is complete
 function Spawner.GC()
