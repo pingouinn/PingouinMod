@@ -2,6 +2,7 @@ local Constants = require("code/Constants")
 local Types = require("code/utils/Types")
 local Math = require("code/utils/Math")
 local Entity = require("code/utils/Entity")
+local Player = require("code/utils/Player")
 local World = {}
 
 
@@ -148,7 +149,7 @@ function World.PerformRaycast(Position, Pawn, Camera, Direction, Rotation, Lengt
     if not librarySuccess or not Types.IsValidObject(KismetSystemLibrary) then return nil, nil, false end
 
     -- Explicit Pawn and Camera values take precedence. If it fails, use the local player as the fallback source
-    local PlayerController = Entity.GetPlayerController()
+    local PlayerController = Player.GetPlayerController()
     if not Types.IsValidObject(Pawn) and Types.IsValidObject(PlayerController) then
         Pawn = Types.UnwrapValue(PlayerController.Pawn)
     end

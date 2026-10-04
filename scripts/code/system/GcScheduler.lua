@@ -47,8 +47,10 @@ function GCScheduler.Update(deltaTime)
     end
 end
 
-RegisterGameThreadUpdateHandler(function(deltaTime)
-    GCScheduler.Update(deltaTime)
+-- Runs the GCScheduler update in a loop with a fixed delta time of 0.016 seconds (approximately 60 FPS).
+LoopAsync(16, function() 
+    GCScheduler.Update(0.016)
+    return false
 end)
 
 return GCScheduler

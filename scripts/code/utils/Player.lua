@@ -1,3 +1,4 @@
+local Types = require("code/utils/Types")
 local Player = {}
 
 local DebugCameraControllerCache = CreateInvalidObject()
@@ -74,7 +75,7 @@ end
 function Player.GetPlayer()
     local success, player = pcall(function() return UEHelpers:GetPlayer() end)
     if success and Types.IsValidObject(player) then return player end
-    local playerController = Entity.GetPlayerController()
+    local playerController = Player.GetPlayerController()
     if playerController then return playerController.Pawn end
     return nil
 end
