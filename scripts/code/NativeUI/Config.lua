@@ -7,11 +7,14 @@ Config.Paths = {
     switchClass = "/Game/Wildfire/Blueprints/UI/SubMenus/Settings/WBP_Button_Switch.WBP_Button_Switch_C",
     textClass = "/Game/Wildfire/Blueprints/UI/SubMenus/WBP_SettingsText.WBP_SettingsText_C",
     titleClass = "/Game/Wildfire/Blueprints/UI/HUD/Mission/WBP_Title.WBP_Title_C",
-    widgetLibrary = "/Script/UMG.Default__WidgetBlueprintLibrary",
+    sliderClass = "/Game/Wildfire/Blueprints/UI/SubMenus/WBP_Slider.WBP_Slider_C",
+
     horizontalBoxClass = "/Script/UMG.HorizontalBox",
     verticalBoxClass = "/Script/UMG.VerticalBox",
     sizeBoxClass = "/Script/UMG.SizeBox",
     spacerClass = "/Script/UMG.Spacer",
+
+    widgetLibrary = "/Script/UMG.Default__WidgetBlueprintLibrary",
     buttonClickFunction = "/Script/CommonUI.CommonButtonBase:HandleButtonClicked",
 }
 

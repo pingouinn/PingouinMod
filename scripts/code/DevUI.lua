@@ -1,23 +1,23 @@
 local NativeUI = require("code/NativeUI/init")
 local Layout = NativeUI.Layout
 
-local dashboard = nil
+local Dashboard = nil
 
---- Builds the development dashboard used to exercise NativeUI components.
+--- Builds the development Dashboard used to exercise NativeUI components.
 local function BuildDashboard()
-    dashboard = NativeUI.CreateWindow({
+    Dashboard = NativeUI.CreateWindow({
         title = "TEST MOD MENU",
         x = 100.0,
         y = 50.0,
         w = 1500.0,
         h = 800.0
     })
-    if not dashboard then return end
+    if not Dashboard then return end
 
-    dashboard:SetBlurStrength(3.0)
+    Dashboard:SetBlurStrength(3.0)
 
     local headerRow = NativeUI.CreateRow()
-    dashboard:AddHeaderWidget(headerRow)
+    Dashboard:AddHeaderWidget(headerRow)
 
     -- Title on the left (Auto + padding)
     local headerTitle = NativeUI.CreateTitle("MOD MENU TEST")
@@ -29,8 +29,8 @@ local function BuildDashboard()
 
     -- Close button on the right (Auto + padding)
     local closeButton = NativeUI.CreateButton("", function()
-        if dashboard then
-            dashboard:Hide()
+        if Dashboard then
+            Dashboard:Hide()
         end
     end, "Style_Button_Close")
 
@@ -45,24 +45,24 @@ local function BuildDashboard()
     -- BODY CONTENT
 
     local sp1 = NativeUI.CreateSpacer()
-    dashboard:AddBodyWidget(sp1, { height = 20.0 })
+    Dashboard:AddBodyWidget(sp1, { height = 20.0 })
 
     local infoText = NativeUI.CreateText("This is a test of the mod menu system. You can add buttons, switches, and other UI elements here.", "Style_Text_MainMenu", false)
-    dashboard:AddBodyWidget(infoText)
+    Dashboard:AddBodyWidget(infoText)
 
     local sp2 = NativeUI.CreateSpacer()
-    dashboard:AddBodyWidget(sp2, { height = 20.0 })
+    Dashboard:AddBodyWidget(sp2, { height = 20.0 })
 
     local button = NativeUI.CreateButton("TEST", function()
         print("Button clicked!")
     end, "Style_Button_BlackYellow")
-    dashboard:AddBodyWidget(button, { height = 45.0 })
+    Dashboard:AddBodyWidget(button, { height = 45.0 })
 
     local sp3 = NativeUI.CreateSpacer()
-    dashboard:AddBodyWidget(sp3, { height = 40.0 })
+    Dashboard:AddBodyWidget(sp3, { height = 40.0 })
 
     local mainRow = NativeUI.CreateRow()
-    dashboard:AddBodyWidget(mainRow, { padding = { Left = 0.0, Top = 8.0, Right = 0.0, Bottom = 0.0 } })
+    Dashboard:AddBodyWidget(mainRow, { padding = { Left = 0.0, Top = 8.0, Right = 0.0, Bottom = 0.0 } })
 
     -- Left column (50% of available width: fill = 1.0)
     local colLeft = NativeUI.CreateColumn(mainRow)
@@ -87,13 +87,33 @@ local function BuildDashboard()
         print("God Mode toggled: " .. tostring(state))
     end)
     rowRight:Add(godModeSwitch, 0.0, nil, Layout.VERTICAL_CENTER) -- Center
+
+    -- Slider 
+
+    local sliderRow = NativeUI.CreateRow(colRight)
+    colRight:Add(sliderRow, 0.0, { Left = 0.0, Top = 4.0, Right = 0.0, Bottom = 4.0 })
+
+    local fovLabel = NativeUI.CreateText("FOV : 90", nil, true)
+    sliderRow:Add(fovLabel, 1.0, nil, 2) -- Takes the remaining space, with vertical alignment centered
+
+    local fovSlider = NativeUI.CreateSlider(70.0, 120.0, 90.0, 1.0, function(val)
+        fovLabel:SetText(string.format("FOV : %d", math.floor(val)))
+    end)
+    sliderRow:Add(fovSlider, 0.0, nil, 2, { width = 180.0, height = 32.0 })
+
+    -- Bouton de test pour voir si la valeur bouge sous le capot
+    Dashboard:AddBodyWidget(NativeUI.CreateButton("Lire valeur slider", function()
+        local raw = fovSlider.Widget.Slider_18:GetValue()
+        print("Valeur interne Slider_18 : " .. tostring(raw))
+        print("Valeur GetValue Blueprint : " .. tostring(fovSlider:GetValue()))
+    end))
 end
 
 RegisterKeyBind(Key.I, function()
-    if not dashboard then
+    if not Dashboard then
         BuildDashboard()
     end
-    if dashboard then
-        dashboard:Toggle()
+    if Dashboard then
+        Dashboard:Toggle()
     end
 end)
