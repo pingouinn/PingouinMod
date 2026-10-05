@@ -1,4 +1,7 @@
 local Types = {}
+local textLibrary = nil
+
+local TEXT_LIBRARY_PATH = "/Script/Engine.Default__KismetTextLibrary"
 
 --- Checks if an object is valid (not nil and not destroyed).
 -- @param object (UObject) The object to check
@@ -68,5 +71,27 @@ function Types.NormalizeVector(value, namedKeys)
     if first == nil or second == nil or third == nil then return nil end
     return {[namedKeys[1]] = first, [namedKeys[2]] = second, [namedKeys[3]] = third}
 end
+
+--- Converts a Lua value to an Unreal FText.
+-- @param value (any) Text content to convert.
+-- @return (FText|nil) The converted text, or nil when the text library is unavailable.
+function Types.ToFText(value)
+    if not Types.IsValidObject(textLibrary) then
+        local success, library = pcall(function()
+            return StaticFindObject(TEXT_LIBRARY_PATH)
+        end)
+        textLibrary = success and library or nil
+    end
+
+    if not Types.IsValidObject(textLibrary) then return nil end
+
+    local success, text = pcall(function()
+        return textLibrary:Conv_StringToText(tostring(value or ""))
+    end)
+    if not success then return nil end
+    return text
+end
+
+
 
 return Types
