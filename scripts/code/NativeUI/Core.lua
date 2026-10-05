@@ -54,8 +54,8 @@ RegisterConsoleCommandHandler("ScrapWidgets", function(fullCommand, args, _)
     if widgets then
         local seen = {}
         for _, w in ipairs(widgets) do
-            local className = w:GetClass():GetFullName()
-            if not seen[className] then
+            local className = Utils.GetObjectName(w:GetClass())
+            if className and not seen[className] then
                 seen[className] = true
                 print("Found class: " .. className .. "\n")
             end

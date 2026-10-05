@@ -15,6 +15,42 @@ local function GetClass()
     return BgClass
 end
 
+--- Gets the blur component of the window's root widget, if available.
+-- @return (UBackgroundBlur|nil) The blur component, or nil if not found.
+local function GetBlurWidget(instance)
+    if not Utils.IsValidObject(instance) then return nil end
+
+    if Utils.IsValidObject(instance.BackgroundBlur_0) then
+        return instance.BackgroundBlur_0
+    end
+
+    if Utils.IsValidObject(instance.WidgetTree) then
+        local tree = instance.WidgetTree
+
+        if tree.FindWidget then
+            local ok, blur = pcall(function() return tree:FindWidget("BackgroundBlur_0") end)
+            if ok and Utils.IsValidObject(blur) then
+                return blur
+            end
+        end
+
+        local root = tree.RootWidget
+        if Utils.IsValidObject(root) and root.GetChildrenCount and root.GetChildAt then
+            for i = 0, root:GetChildrenCount() - 1 do
+                local child = root:GetChildAt(i)
+                if Utils.IsValidObject(child) then
+                    local objectName = Utils.GetObjectName(child)
+                    if objectName and objectName:find("BackgroundBlur") then
+                        return child
+                    end
+                end
+            end
+        end
+    end
+
+    return nil
+end
+
 --- Creates a NativeUI window backed by the game's background widget.
 -- @param config (table|nil) Window options: x, y, w, h, and zOrder.
 -- @return (table|nil) A window object, or nil when the widget cannot be created.
@@ -39,8 +75,8 @@ function Window.New(config)
             for i = 0, Canvas:GetChildrenCount() - 1 do
                 local child = Canvas:GetChildAt(i)
                 if Utils.IsValidObject(child) then
-                    local name = child:GetClass():GetFullName()
-                    if name:match("VerticalBox") then
+                    local name = Utils.GetObjectName(child:GetClass())
+                    if name and name:match("VerticalBox") then
                         VBoxMain = child
                         break
                     end
@@ -53,10 +89,10 @@ function Window.New(config)
         for i = 0, VBoxMain:GetChildrenCount() - 1 do
             local child = VBoxMain:GetChildAt(i)
             if Utils.IsValidObject(child) then
-                local name = child:GetClass():GetFullName()
-                if name:match("HorizontalBox") and not HBoxHeader then
+                local name = Utils.GetObjectName(child:GetClass())
+                if name and name:match("HorizontalBox") and not HBoxHeader then
                     HBoxHeader = child
-                elseif name:match("VerticalBox") and child ~= VBoxMain and not VBoxBody then
+                elseif name and name:match("VerticalBox") and child ~= VBoxMain and not VBoxBody then
                     VBoxBody = child
                 end
             end
@@ -92,7 +128,7 @@ end
 function Window:AddHeaderWidget(component, padding)
     if not component then return end
     local rawWidget = component.Widget or component
-    
+
     if self.HBox and rawWidget and self.HBox.AddChildToHorizontalBox then
         local success, errorMessage = pcall(function()
             local slot = self.HBox:AddChildToHorizontalBox(rawWidget)
@@ -141,15 +177,43 @@ function Window:AddBodyWidget(widgetItem, padding)
         print("[NativeUI Error] AddBodyWidget failed: " .. tostring(errorMessage))
         return
     end
-    
+
     table.insert(self.Children, widgetItem)
+end
+
+-- Sets the blur strenght of the window's background blur widget.
+-- @param strength (number) Blur strength value (0.0 = completely sharp / disabled, 10.0 = default game blur).
+function Window:SetBlurStrength(strength)
+    local blur = GetBlurWidget(self.RootWidget)
+    if not blur then return end
+
+    local val = tonumber(strength) or 0.0
+    pcall(function()
+        if blur.SetBlurStrength then
+            blur:SetBlurStrength(val)
+        else
+            blur.BlurStrength = val
+        end
+
+        -- If the blur strength is 0.0 or less, collapse the blur widget to avoid unnecessary rendering.
+        if val <= 0.0 then
+            blur:SetVisibility(2) -- Collapsed
+        else
+            blur:SetVisibility(0) -- Visible
+        end
+    end)
+end
+
+-- Disables the blur effect on the window's background by setting the blur strength to 0.0.
+function Window:DisableBlur()
+    self:SetBlurStrength(0.0)
 end
 
 --- Shows the window and switches the player to game-and-UI input.
 function Window:Show()
     if not self.RootWidget then return end
     self.IsOpen = true
-    
+
     local success, errorMessage = pcall(function()
         self.RootWidget:AddToViewport(self.ZOrder)
 
@@ -188,7 +252,7 @@ end
 function Window:Hide()
     if not self.RootWidget then return end
     self.IsOpen = false
-    
+
     local success, errorMessage = pcall(function()
         self.RootWidget:RemoveFromParent()
     end)

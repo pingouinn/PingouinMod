@@ -13,6 +13,8 @@ local function BuildDashboard()
     })
     if not Dashboard then return end
 
+    Dashboard:SetBlurStrength(3.0)
+
     local HeaderTitle = NativeUI.CreateTitle("MOD MENU TEST")
     Dashboard:AddHeaderWidget(HeaderTitle)
 
