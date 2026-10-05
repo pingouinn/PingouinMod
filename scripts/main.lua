@@ -61,6 +61,10 @@ EntityOutline = require("code/EntityOutline")
 BarrierOpener = require("code/BarrierOpener")
 CollisionDeactivator = require("code/CollisionDeactivator")
 EntitySelector = require("code/EntitySelector")
+DevUI = require("code/DevUI")
+
+-- UI
+NativeUI = require("code/NativeUI/init")
 
 WildFire = Utils.RequireUE4SSDump(MOD_FOLDER .. "/shared/types/Wildfire.lua")
 if WildFire == nil then print("[PingouinMod] ERROR: Failed to load Wildfire UE4SS dump\n") end
