@@ -46,9 +46,10 @@ end
 
 --- Spawns an actor of the specified class in front of the player.
 -- @param ActorClassPath (string) The full Unreal asset path of the actor class
+-- @param distInFront (number) The distance in front of the player to spawn the actor
 -- @param verbose (boolean) Whether to print debug messages
 -- @return (AActor|nil) The spawned actor, or nil if spawning failed
-function Spawner.SpawnActor(ActorClassPath, verbose)
+function Spawner.SpawnActor(ActorClassPath, distInFront, verbose)
     verbose = verbose or false
     print("[PingouinMod] Spawning actor of class : " .. ActorClassPath .. "\n")
     local spawnedComponents = {}
@@ -63,7 +64,7 @@ function Spawner.SpawnActor(ActorClassPath, verbose)
     if not Utils.IsValidObject(player) then print("[PingouinMod] ERROR: Could not get local player.\n") return end
 
     -- Spawn the actor in front of the player
-    local newPos = Utils.GetPositionInFront(player:K2_GetActorLocation(), player:K2_GetActorRotation(), 500) -- TODO : Make it dynamic or config based (its to avoid vehicles spawning inside the player currently)
+    local newPos = Utils.GetPositionInFront(player:K2_GetActorLocation(), player:K2_GetActorRotation(), distInFront or 50.0) 
     if verbose then print(string.format("[PingouinMod] Spawning at position: X=%.2f Y=%.2f Z=%.2f\n", newPos.X, newPos.Y, newPos.Z)) end
 
     local world = UEHelpers:GetWorld()
@@ -241,9 +242,11 @@ RegisterConsoleCommandHandler("Spawn", function(fullCommand, args, _)
     -- Handle short naming if needed
     local className = ShortNaming.HandleShortNaming(args[1])
     if className == nil then print(string.format("[PingouinMod] ERROR: Could not resolve class name for short name: %s\n", args[1])) return false end
+    local distInFront
+    if #args > 2 then distInFront = tonumber(args[2]) end
 
     ExecuteInGameThread(function()
-        Spawner.SpawnActor(className, verbose)
+        Spawner.SpawnActor(className, distInFront, verbose)
     end)
     return true
 end)

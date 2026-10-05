@@ -43,8 +43,6 @@ print("[PingouinMod] Mod folder path: " .. MOD_FOLDER .. "\n")
 -- DEBUG_MODE is a global variable that controls whether debug messages and protected calls are printed.
 DEBUG_MODE = GB_StrToBool[tostring(SettingsConfig.DEBUG_MODE)] or false
 
--- TODO : Automatically detect scripts instead of hardcoding the list of scripts to load. 
-
 ------ File imports ------
 
 -- Sys
