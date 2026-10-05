@@ -10,7 +10,6 @@ local savedPlayerState
 
 --- Toggles the player cheat mode state, granting or removing special abilities.
 function PlayerCheat.TogglePlayerCheatMode()
-    -- TODO : Signature may change based on the actual player object class --> Find more robust way to get the player object
     local firstPlayerController = Utils.GetPlayerController()
     local player = firstPlayerController.Pawn
     if not Utils.IsValidObject(player) then print("PlayerAbilities : Player object is not valid\n") return end
