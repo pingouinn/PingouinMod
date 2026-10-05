@@ -8,7 +8,7 @@ local DebugCameraControllerCache = CreateInvalidObject()
 -- @return (boolean) True when the controller is a debug camera controller
 local function IsDebugCameraController(controller)
     if not Types.IsValidObject(controller) then return false end
-    local success, fullName = pcall(function() return controller:GetFullName() end)
+    local success, fullName = Types.TryCall("Read controller full name", function() return controller:GetFullName() end)
     return success and string.find(fullName, "DebugCameraController", 1, true) ~= nil
 end
 
@@ -60,10 +60,10 @@ end
 --- Retrieves the local player controller, ensuring it is valid and not a debug camera controller.
 -- @return (UPlayerController|nil) The local player controller, or nil if not found
 function Player.GetPlayerController()
-    local success, currentController = pcall(function() return UEHelpers:GetPlayerController() end)
+    local success, currentController = Types.TryCall("Get player controller", function() return UEHelpers:GetPlayerController() end)
     if success and Types.IsValidObject(currentController) and not IsDebugCameraController(currentController) then return currentController end
     for _, controller in ipairs(FindAllOf("PlayerController") or {}) do
-        local isLocalSuccess, isLocal = pcall(function() return controller:IsLocalPlayerController() end)
+        local isLocalSuccess, isLocal = Types.TryCall("Check local player controller", function() return controller:IsLocalPlayerController() end)
         if Types.IsValidObject(controller) and not IsDebugCameraController(controller)
             and isLocalSuccess and isLocal and Types.IsValidObject(controller.Pawn) then return controller end
     end
@@ -73,7 +73,7 @@ end
 --- Gets the local player pawn, ensuring it is valid.
 -- @return (APawn|nil) The local player pawn, or nil if not found
 function Player.GetPlayer()
-    local success, player = pcall(function() return UEHelpers:GetPlayer() end)
+    local success, player = Types.TryCall("Get player pawn", function() return UEHelpers:GetPlayer() end)
     if success and Types.IsValidObject(player) then return player end
     local playerController = Player.GetPlayerController()
     if playerController then return playerController.Pawn end

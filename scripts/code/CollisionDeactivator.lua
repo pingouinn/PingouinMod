@@ -25,7 +25,7 @@ function CollisionDeactivator.ToggleElementCollisionInFront(verbose)
     local resolvedTarget = nil
 
     -- Secure extraction of the Actor or Component from the hit result
-    pcall(function()
+    Utils.TryCall("Read hit actor", function()
         if hitEntity.Actor then
             local a = hitEntity.Actor
             resolvedTarget = (type(a) == "userdata" and a.get and a:get()) or a
@@ -33,7 +33,7 @@ function CollisionDeactivator.ToggleElementCollisionInFront(verbose)
     end)
 
     if not resolvedTarget then
-        pcall(function()
+        Utils.TryCall("Read hit component", function()
             if hitEntity.Component then
                 local c = hitEntity.Component
                 resolvedTarget = (type(c) == "userdata" and c.get and c:get()) or c
@@ -46,7 +46,7 @@ function CollisionDeactivator.ToggleElementCollisionInFront(verbose)
     end
 
     -- If the resolved target is a component, we attempt to get its owner actor
-    pcall(function()
+    Utils.TryCall("Read hit entity owner", function()
         if resolvedTarget and resolvedTarget.GetOwner then
             local owner = resolvedTarget:GetOwner()
             if owner and owner:IsValid() then
@@ -60,7 +60,7 @@ function CollisionDeactivator.ToggleElementCollisionInFront(verbose)
         local entityName = "Unknown"
         local nameRetrieved = false
 
-        pcall(function()
+        Utils.TryCall("Read resolved entity full name", function()
             if resolvedTarget and resolvedTarget.GetFullName then
                 entityName = resolvedTarget:GetFullName()
                 nameRetrieved = true
@@ -68,7 +68,7 @@ function CollisionDeactivator.ToggleElementCollisionInFront(verbose)
         end)
 
         if not nameRetrieved then
-            pcall(function()
+            Utils.TryCall("Read resolved entity name", function()
                 if resolvedTarget and resolvedTarget.GetName then
                     entityName = resolvedTarget:GetName()
                     nameRetrieved = true

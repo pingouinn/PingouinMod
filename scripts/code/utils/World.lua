@@ -47,22 +47,22 @@ function World.PlaceActorOnSurface(Actor, MeshComponent, MeshAsset, SurfacePoint
     local actorZ = Types.ReadVectorComponent(actorLocation, "Z")
     if not surfaceZ or not actorX or not actorY or not actorZ then return end
 
-    local boundsSuccess, minBounds, maxBounds = pcall(function() return MeshComponent:GetLocalBounds() end)
+    local boundsSuccess, minBounds, maxBounds = Types.TryCall("Read mesh component bounds", function() return MeshComponent:GetLocalBounds() end)
     local localBounds = boundsSuccess and minBounds and maxBounds
     if (not boundsSuccess or not minBounds or not maxBounds) and MeshAsset then
-        boundsSuccess, minBounds, maxBounds = pcall(function() return MeshAsset:GetLocalBounds() end)
+        boundsSuccess, minBounds, maxBounds = Types.TryCall("Read mesh asset bounds", function() return MeshAsset:GetLocalBounds() end)
         localBounds = boundsSuccess and minBounds and maxBounds
     end
     if not boundsSuccess or not minBounds or not maxBounds then
         local KismetSystemLibrary = UEHelpers:GetKismetSystemLibrary()
-        local returnedSuccess, returnedOrigin, returnedExtent = pcall(function()
+        local returnedSuccess, returnedOrigin, returnedExtent = Types.TryCall("Read component bounds", function()
             return KismetSystemLibrary:GetComponentBounds(MeshComponent)
         end)
         if returnedSuccess and returnedOrigin and returnedExtent then
             minBounds, maxBounds, boundsSuccess, localBounds = returnedOrigin, returnedExtent, true, false
         else
             local originOutput, extentOutput, radiusOutput = {}, {}, {}
-            local outputSuccess = pcall(function()
+            local outputSuccess = Types.TryCall("Read component bounds outputs", function()
                 KismetSystemLibrary:GetComponentBounds(MeshComponent, originOutput, extentOutput, radiusOutput)
             end)
             if outputSuccess then
@@ -79,9 +79,9 @@ function World.PlaceActorOnSurface(Actor, MeshComponent, MeshAsset, SurfacePoint
 
     local meshBottom = localBounds and actorZ + minZ or minZ - (extentZ or 0)
     local verticalOffset = surfaceZ - meshBottom
-    local componentLocationSuccess, componentLocation = pcall(function() return MeshComponent:K2_GetComponentLocation() end)
+    local componentLocationSuccess, componentLocation = Types.TryCall("Read component location", function() return MeshComponent:K2_GetComponentLocation() end)
     if not componentLocationSuccess then
-        componentLocationSuccess, componentLocation = pcall(function() return MeshComponent:GetComponentLocation() end)
+        componentLocationSuccess, componentLocation = Types.TryCall("Read component location fallback", function() return MeshComponent:GetComponentLocation() end)
     end
     local componentX = componentLocationSuccess and Types.ReadVectorComponent(componentLocation, "X") or actorX
     local componentY = componentLocationSuccess and Types.ReadVectorComponent(componentLocation, "Y") or actorY
@@ -89,11 +89,11 @@ function World.PlaceActorOnSurface(Actor, MeshComponent, MeshAsset, SurfacePoint
     if not componentX or not componentY or not componentZ then return end
 
     local targetLocation = {X = componentX, Y = componentY, Z = componentZ + verticalOffset}
-    local moveSuccess, moveResult = pcall(function()
+    local moveSuccess, moveResult = Types.TryCall("Move mesh component", function()
         return MeshComponent:K2_SetWorldLocation(targetLocation, false, {}, true)
     end)
     if not moveSuccess or moveResult == false then
-        pcall(function() Actor:K2_SetActorLocation(targetLocation, false, {}, true) end)
+        Types.TryCall("Move actor fallback", function() Actor:K2_SetActorLocation(targetLocation, false, {}, true) end)
     end
 end
 
@@ -102,8 +102,8 @@ end
 -- @return (FVector|nil, FRotator|nil) Camera location and rotation
 local function getCameraData(camera)
     if not Types.IsValidObject(camera) then return nil, nil end
-    local locationSuccess, location = pcall(function() return camera:GetCameraLocation() end)
-    local rotationSuccess, rotation = pcall(function() return camera:GetCameraRotation() end)
+    local locationSuccess, location = Types.TryCall("Read camera location", function() return camera:GetCameraLocation() end)
+    local rotationSuccess, rotation = Types.TryCall("Read camera rotation", function() return camera:GetCameraRotation() end)
     if not locationSuccess or not rotationSuccess then return nil, nil end
     return Types.ReadVector(location), rotation
 end
@@ -112,17 +112,17 @@ end
 -- @param hitResult (FHitResult) The Unreal hit result
 -- @return (UObject|nil) The hit object, actor, or component
 local function getHitObject(hitResult)
-    local success, handle = pcall(function()
+    local success, handle = Types.TryCall("Read hit object handle", function()
         local handle = Types.UnwrapValue(hitResult.HitObjectHandle)
         return handle and Types.UnwrapValue(handle.ReferenceObject)
     end)
     if success and handle then
-        local referenceSuccess, object = pcall(function() return handle:Get() end)
+        local referenceSuccess, object = Types.TryCall("Resolve hit object reference", function() return handle:Get() end)
         if referenceSuccess and object then return object end
     end
-    local actorSuccess, actor = pcall(function() return Types.UnwrapValue(hitResult.Actor) end)
+    local actorSuccess, actor = Types.TryCall("Read hit actor", function() return Types.UnwrapValue(hitResult.Actor) end)
     if actorSuccess and actor then return actor end
-    local componentSuccess, component = pcall(function() return Types.UnwrapValue(hitResult.Component) end)
+    local componentSuccess, component = Types.TryCall("Read hit component", function() return Types.UnwrapValue(hitResult.Component) end)
     return componentSuccess and component or nil
 end
 
@@ -145,7 +145,7 @@ end
 function World.PerformRaycast(Position, Pawn, Camera, Direction, Rotation, Length, TraceChannel, TraceComplex, ActorsToIgnore, IgnoreSelf, DrawDebug, DrawTime, TraceColor, TraceHitColor)
     -- UE4SS can throw when a library is unavailable during world loading, so
     -- failure to acquire it is reported as an unsuccessful trace.
-    local librarySuccess, KismetSystemLibrary = pcall(function() return UEHelpers:GetKismetSystemLibrary() end)
+    local librarySuccess, KismetSystemLibrary = Types.TryCall("Get Kismet system library", function() return UEHelpers:GetKismetSystemLibrary() end)
     if not librarySuccess or not Types.IsValidObject(KismetSystemLibrary) then return nil, nil, false end
 
     -- Explicit Pawn and Camera values take precedence. If it fails, use the local player as the fallback source
@@ -169,7 +169,7 @@ function World.PerformRaycast(Position, Pawn, Camera, Direction, Rotation, Lengt
     if not StartVector and Pawn then
         StartVector = Entity.GetActorLocation(Pawn)
         if not Rotation then
-            pcall(function() Rotation = Pawn:K2_GetActorRotation() end)
+            Types.TryCall("Read pawn rotation", function() Rotation = Pawn:K2_GetActorRotation() end)
         end
     end
     if not StartVector then return nil, nil, false end
@@ -214,7 +214,7 @@ function World.PerformRaycast(Position, Pawn, Camera, Direction, Rotation, Lengt
 
     -- The native call is protected because invalid UE objects can throw errors and fuck the whole trace (not happend one nor twice. SEVERAL TIMES)
     local hitResult = {}
-    local success, wasHit = pcall(function()
+    local success, wasHit = Types.TryCall("Perform line trace", function()
         return KismetSystemLibrary:LineTraceSingle(
             Pawn, StartVector, EndVector, traceChannel, TraceComplex ~= false,
             actorsToIgnore, drawDebug, hitResult, IgnoreSelf ~= false, traceColor, traceHitColor,

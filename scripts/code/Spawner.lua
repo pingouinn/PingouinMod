@@ -12,7 +12,7 @@ local function IsStaticMeshAsset(asset, assetPath)
     local normalizedPath = string.lower(tostring(assetPath or ""))
     if string.find(normalizedPath, "/staticmeshes/", 1, true) then return true end
 
-    local success, isStaticMesh = pcall(function()
+    local success, isStaticMesh = Utils.TryCall("Check static mesh asset", function()
         return asset:IsA(Constants.STATIC_MESH_CLASS_PATH)
     end)
     return success and isStaticMesh == true
@@ -94,7 +94,7 @@ function Spawner.SpawnActor(ActorClassPath, verbose)
             return
         end
 
-        local addSuccess, meshComponent = pcall(function()
+        local addSuccess, meshComponent = Utils.TryCall("Create static mesh component", function()
             return Actor:AddComponentByClass(componentClass, false, {
                 Translation = {X = 0, Y = 0, Z = 0},
                 Rotation = {Pitch = 0, Yaw = 0, Roll = 0},
@@ -107,19 +107,21 @@ function Spawner.SpawnActor(ActorClassPath, verbose)
             return
         end
 
-        local setSuccess, setResult = pcall(function()
+        local setSuccess, setResult = Utils.TryCall("Assign static mesh", function()
             return meshComponent:SetStaticMesh(loadedAsset)
         end)
         local propertyAssigned = setSuccess and setResult == true
         if not setSuccess or setResult == false then
             -- Some UE4SS versions require direct property assignment.
-            local propertySuccess, propertyMesh = pcall(function()
+            local propertySuccess, propertyMesh = Utils.TryCall("Assign static mesh property", function()
                 meshComponent.StaticMesh = loadedAsset
                 return meshComponent.StaticMesh
             end)
             local propertyValid = false
             if propertySuccess and propertyMesh then
-                local validSuccess, validResult = pcall(Utils.IsValidObject, propertyMesh)
+                local validSuccess, validResult = Utils.TryCall("Validate assigned static mesh", function()
+                    return Utils.IsValidObject(propertyMesh)
+                end)
                 propertyValid = validSuccess and validResult == true
             end
             propertyAssigned = propertyValid
@@ -132,13 +134,13 @@ function Spawner.SpawnActor(ActorClassPath, verbose)
         end
 
         -- Refresh registration and rendering after changing the mesh.
-        local registerSuccess, registerResult = pcall(function() return meshComponent:RegisterComponentWithWorld(world) end)
+        local registerSuccess, registerResult = Utils.TryCall("Register static mesh component", function() return meshComponent:RegisterComponentWithWorld(world) end)
         if not registerSuccess or registerResult == false then
-            pcall(function() meshComponent:RegisterComponent() end)
+            Utils.TryCall("Register static mesh component fallback", function() meshComponent:RegisterComponent() end)
         end
-        pcall(function() Actor:SetActorHiddenInGame(false) end)
-        pcall(function() meshComponent:SetVisibility(true, true) end)
-        pcall(function() meshComponent:MarkRenderStateDirty() end)
+        Utils.TryCall("Show spawned actor", function() Actor:SetActorHiddenInGame(false) end)
+        Utils.TryCall("Show spawned mesh component", function() meshComponent:SetVisibility(true, true) end)
+        Utils.TryCall("Refresh spawned mesh render state", function() meshComponent:MarkRenderStateDirty() end)
         table.insert(spawnedComponents, meshComponent)
     end
     

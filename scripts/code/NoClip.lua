@@ -81,7 +81,7 @@ function NoClip.ToggleNoClip()
 
         local debugCameraDisabled = false
         if Utils.IsValidObject(activePlayerController) and Utils.IsValidObject(activePlayerController.CheatManager) then
-            local disableSuccess = pcall(function()
+            local disableSuccess = Utils.TryCall("Disable debug camera", function()
                 activePlayerController.CheatManager:DisableDebugCamera()
             end)
             debugCameraDisabled = disableSuccess
@@ -91,7 +91,7 @@ function NoClip.ToggleNoClip()
             local debugCamController = Utils.GetDebugCameraController()
             if Utils.IsValidObject(debugCamController) then
                 Utils.EnableCheatManager(debugCamController)
-                debugCameraDisabled = pcall(function()
+                debugCameraDisabled = Utils.TryCall("Disable fallback debug camera", function()
                     debugCamController.CheatManager:DisableDebugCamera()
                 end)
             end
@@ -113,7 +113,9 @@ function NoClip.ToggleNoClip()
         ScheduleActivationRetry()
         return
     end
-    local cheatManagerSuccess, cheatManagerEnabled = pcall(Utils.EnableCheatManager, playerController)
+    local cheatManagerSuccess, cheatManagerEnabled = Utils.TryCall("Enable cheat manager", function()
+        return Utils.EnableCheatManager(playerController)
+    end)
     if not cheatManagerSuccess or not cheatManagerEnabled then
         ScheduleActivationRetry()
         return
@@ -146,13 +148,13 @@ function NoClip.ToggleNoClip()
 
     print("[PingouinMod] Toggle NoClip mode ON\n")
     lastPos = {X = 0.0, Y = 0.0, Z = 0.0}
-    pcall(function() playerController.CheatManager:EnableDebugCamera() end)
+    Utils.TryCall("Enable debug camera", function() playerController.CheatManager:EnableDebugCamera() end)
 
     ExecuteWithDelay(250, function()
             LoopAsync(16, function()
                 if not NoClip.noClipEnabled then return true end -- Exit the loop if noClip is disabled
 
-                local pawnSuccess, currentPawn = pcall(function() return activePlayerController.Pawn end)
+                local pawnSuccess, currentPawn = Utils.TryCall("Read active pawn", function() return activePlayerController.Pawn end)
                 if not pawnSuccess then currentPawn = nil end
                 if Utils.IsValidObject(currentPawn) and currentPawn ~= activePawn then
                     RestorePawnState(activePawnState)

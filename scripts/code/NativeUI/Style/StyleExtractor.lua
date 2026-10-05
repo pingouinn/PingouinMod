@@ -36,7 +36,7 @@ function StyleExtractor.ScanAll(dumpFile)
     local totalCount = 0
 
     ForEachUObject(function(obj)
-        local ok, fullName = pcall(function() return obj:GetFullName() end)
+        local ok, fullName = Utils.TryCall("Read style object full name", function() return obj:GetFullName() end)
         if not ok or not fullName then return end
 
         if fullName:find("^BlueprintGeneratedClass%s+/Game/")
@@ -98,7 +98,7 @@ function StyleExtractor.GetCachedStyleType(styleType)
         local found = {}
 
         ForEachUObject(function(obj)
-            local ok, fullName = pcall(function() return obj:GetFullName() end)
+            local ok, fullName = Utils.TryCall("Read style object full name", function() return obj:GetFullName() end)
             if ok and fullName
                and fullName:find("^BlueprintGeneratedClass%s+/Game/")
                and fullName:find("/UI/Styles/")

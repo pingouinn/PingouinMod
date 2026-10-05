@@ -18,7 +18,7 @@ local function EnableCustomDepthOnComponent(comp, bEnabled, stencilValue)
     if not Utils.IsValidObject(comp) then return end
 
     if comp.SetRenderCustomDepth then
-        local success, errorMessage = pcall(function()
+        local success, errorMessage = Utils.TryCall("Update custom depth", function()
             comp:SetRenderCustomDepth(bEnabled)
             if bEnabled and stencilValue ~= nil and comp.SetCustomDepthStencilValue then
                 comp:SetCustomDepthStencilValue(stencilValue)
@@ -46,14 +46,14 @@ local function ProcessComponentHierarchy(comp, bEnabled, stencilValue, visited)
         local children = comp.AttachChildren
         if children.ForEach then
             children:ForEach(function(index, child)
-                local success, unwrappedChild = pcall(function() return Utils.UnwrapValue(child) end)
+                local success, unwrappedChild = Utils.TryCall("Unwrap attached component", function() return Utils.UnwrapValue(child) end)
                 if unwrappedChild then
                     ProcessComponentHierarchy(unwrappedChild, bEnabled, stencilValue, visited)
                 end
             end)
         elseif type(children) == "table" then
             for _, child in ipairs(children) do
-                local success, unwrappedChild = pcall(function() return Utils.UnwrapValue(child) end)
+                local success, unwrappedChild = Utils.TryCall("Unwrap attached component", function() return Utils.UnwrapValue(child) end)
                 if unwrappedChild then
                     ProcessComponentHierarchy(unwrappedChild, bEnabled, stencilValue, visited)
                 end
@@ -89,14 +89,14 @@ local function ApplyCustomDepthToActor(actor, bEnabled, stencilValue, visited)
         local childrenActors = actor.Children
         if childrenActors.ForEach then
             childrenActors:ForEach(function(index, childActor)
-                local success, unwrappedChild = pcall(function() return Utils.UnwrapValue(child) end)
+                local success, unwrappedChild = Utils.TryCall("Unwrap child actor", function() return Utils.UnwrapValue(childActor) end)
                 if unwrappedChild then
                     ProcessComponentHierarchy(unwrappedChild, bEnabled, stencilValue, visited)
                 end
             end)
         elseif type(childrenActors) == "table" then
             for _, childActor in ipairs(childrenActors) do
-                local success, unwrappedChild = pcall(function() return Utils.UnwrapValue(child) end)
+                local success, unwrappedChild = Utils.TryCall("Unwrap child actor", function() return Utils.UnwrapValue(childActor) end)
                 if unwrappedChild then
                     ProcessComponentHierarchy(unwrappedChild, bEnabled, stencilValue, visited)
                 end

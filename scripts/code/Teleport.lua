@@ -35,7 +35,7 @@ function Teleport.TeleportPawn(posTable, isOffset, rotTable, verbose, targetPawn
 
     if isOffset then
         -- Read the current location only when applying a relative offset.
-        local positionSuccess, rawPosition = pcall(function() return pawn:K2_GetActorLocation() end)
+        local positionSuccess, rawPosition = Utils.TryCall("Read pawn location", function() return pawn:K2_GetActorLocation() end)
         if not positionSuccess then return false end
         local pos = Utils.ReadVector(rawPosition)
         if not pos.X or not pos.Y or not pos.Z then return false end
@@ -46,7 +46,7 @@ function Teleport.TeleportPawn(posTable, isOffset, rotTable, verbose, targetPawn
         -- Convert the relative offset into an absolute target location.
         newPos = {X = pos.X + newPos.X , Y = pos.Y + newPos.Y,  Z = pos.Z + newPos.Z}
     elseif verbose then
-        local positionSuccess, rawPosition = pcall(function() return pawn:K2_GetActorLocation() end)
+        local positionSuccess, rawPosition = Utils.TryCall("Read pawn location", function() return pawn:K2_GetActorLocation() end)
         if not positionSuccess then return false end
         local pos = Utils.ReadVector(rawPosition)
         if not pos.X or not pos.Y or not pos.Z then return false end
@@ -54,14 +54,14 @@ function Teleport.TeleportPawn(posTable, isOffset, rotTable, verbose, targetPawn
     end
 
     -- Move without sweeping so noclip is not blocked by collision.
-    local locationSuccess, ret = pcall(function()
+    local locationSuccess, ret = Utils.TryCall("Teleport pawn", function()
         return pawn:K2_SetActorLocation(newPos, false, {}, true)
     end)
     if not locationSuccess or not ret then return false end
 
     if newRot then
         -- Rotation is optional because noclip supplies it every frame.
-        local rotationSuccess, rotationResult = pcall(function()
+        local rotationSuccess, rotationResult = Utils.TryCall("Rotate pawn", function()
             pawn:K2_SetActorRotation(newRot, false)
         end)
         if not rotationSuccess or rotationResult == false then return false end
@@ -71,7 +71,7 @@ function Teleport.TeleportPawn(posTable, isOffset, rotTable, verbose, targetPawn
     if not verbose then return true end
 
     -- Verify and report the final location for manual teleports.
-    local newPositionSuccess, finalPos = pcall(function() return pawn:K2_GetActorLocation() end)
+    local newPositionSuccess, finalPos = Utils.TryCall("Read teleported pawn location", function() return pawn:K2_GetActorLocation() end)
     if not newPositionSuccess or not finalPos then return false end
     local finalPosition = Utils.ReadVector(finalPos)
     local finalX = finalPosition and finalPosition.X

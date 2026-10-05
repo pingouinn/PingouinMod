@@ -1,5 +1,6 @@
 -- This module provides periodic execution of registered GC functions.
 
+local Types = require("code/utils/Types")
 local GCScheduler = {}
 GCScheduler.gcFunctions = {}
 
@@ -38,10 +39,7 @@ function GCScheduler.Update(deltaTime)
             if entry.timer >= entry.interval then
                 entry.timer = entry.timer - entry.interval
 
-                local success, err = pcall(entry.fn)
-                if not success then
-                    print("[GCScheduler] Error during execution : " .. tostring(err))
-                end
+                Types.TryCall("Execute scheduled garbage collection", entry.fn)
             end
         end
     end

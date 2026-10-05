@@ -16,9 +16,9 @@ end
 -- @return (FVector|nil) The normalized world location, or nil when unavailable
 function Entity.GetActorLocation(actor)
     if not Types.IsValidObject(actor) then return nil end
-    local success, location = pcall(function() return actor:K2_GetActorLocation() end)
+    local success, location = Types.TryCall("Read actor location", function() return actor:K2_GetActorLocation() end)
     if not success then
-        success, location = pcall(function() return actor:GetActorLocation() end)
+        success, location = Types.TryCall("Read actor location fallback", function() return actor:GetActorLocation() end)
     end
     return success and Types.ReadVector(location) or nil
 end
@@ -29,12 +29,12 @@ end
 function Entity.GetObjectName(object)
     if not object then return nil end
 
-    local success, name = pcall(function()
+    local success, name = Types.TryCall("Read object name", function()
         if object.GetName then  return object:GetName() end
     end)
 
     if not success or not name then
-        success, name = pcall(function()
+        success, name = Types.TryCall("Read object full name", function()
             if object.GetFullName then return object:GetFullName() end
         end)
     end
@@ -65,12 +65,12 @@ function Entity.ResolveStaticMesh(assetPath, fallbackAsset)
     local staticMeshClass = StaticFindObject(Constants.STATIC_MESH_CLASS_PATH)
     if Types.IsValidObject(staticMeshClass) then
         for _, objectPath in ipairs({assetPath, packagePath}) do
-            local success, typedAsset = pcall(function() return StaticFindObject(staticMeshClass, nil, objectPath, true) end)
+            local success, typedAsset = Types.TryCall("Find typed static mesh", function() return StaticFindObject(staticMeshClass, nil, objectPath, true) end)
             if success and Types.IsValidObject(typedAsset) then return typedAsset end
         end
     end
     if objectName then
-        local success, typedAsset = pcall(function() return FindObject("StaticMesh", objectName, 0, 0) end)
+        local success, typedAsset = Types.TryCall("Find static mesh object", function() return FindObject("StaticMesh", objectName, 0, 0) end)
         if success and Types.IsValidObject(typedAsset) then return typedAsset end
     end
     local packageAsset = LoadAsset(packagePath)
@@ -106,12 +106,12 @@ function Entity.GetTopLevelEntity(entity)
         local parent = nil
 
         if current.GetOwner then
-            local success, owner = pcall(function() return current:GetOwner() end)
+            local success, owner = Types.TryCall("Read entity owner", function() return current:GetOwner() end)
             if success and Utils.IsValidObject(owner) then parent = owner end
         end
 
         if not parent and current.GetAttachParentActor then
-            local success, parentActor = pcall(function() return current:GetAttachParentActor() end)
+            local success, parentActor = Types.TryCall("Read attached parent actor", function() return current:GetAttachParentActor() end)
             if success and Utils.IsValidObject(parentActor) then parent = parentActor end
         end
 
@@ -133,7 +133,7 @@ function Entity.DisableEntityCollision(entity)
         return disabled
     end
 
-    pcall(function()
+    Types.TryCall("Disable actor collision", function()
         if entity.SetActorEnableCollision then
             entity:SetActorEnableCollision(false)
             disabled = true
@@ -142,7 +142,7 @@ function Entity.DisableEntityCollision(entity)
     end)
 
     if not disabled then
-        pcall(function()
+        Types.TryCall("Disable component collision", function()
             if entity.SetCollisionEnabled then
                 -- 0 = ECollisionEnabled::NoCollision
                 entity:SetCollisionEnabled(0)
