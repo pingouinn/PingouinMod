@@ -39,7 +39,7 @@ local function ApplyButtonStyle(instance, stylePath)
 
     local ok, cdo = Utils.TryCall("Read button style defaults", function()
         return styleClass:GetDefaultObject()
-    end)
+    end, true) -- Ignore errors when the style class doesn't have a GetDefaultObject function
     if not ok or not Utils.IsValidObject(cdo) then return end
 
     if cdo.NormalTextStyle and Utils.IsValidObject(instance.BTNText) then

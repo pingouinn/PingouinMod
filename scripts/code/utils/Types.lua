@@ -103,15 +103,18 @@ end
 --- Executes a protected operation and reports failures with a consistent prefix.
 -- @param operationName (string) Operation description used in the error message.
 -- @param callback (function) Operation to execute.
+-- @param silently (boolean) Whether to suppress error messages.
 -- @return (boolean, any) Success state and callback results or error message.
-function Types.TryCall(operationName, callback)
+function Types.TryCall(operationName, callback, silently)
     if type(callback) ~= "function" then
         return false, "callback must be a function"
     end
 
     local results = PackValues(pcall(callback))
     if not results[1] then
-        print(string.format("[PingouinMod Error] %s: %s", operationName, tostring(results[2])))
+        if not silently then
+            print(string.format("[PingouinMod Error] %s: %s", operationName, tostring(results[2])))
+        end
         return false, results[2]
     end
 

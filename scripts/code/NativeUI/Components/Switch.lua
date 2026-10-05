@@ -80,7 +80,7 @@ function SwitchComponent.Create(initialState, onToggle, stylePath)
             elseif self.Widget.SetIsChecked then
                 self.Widget:SetIsChecked(self.IsChecked)
             end
-        end)
+        end, true) -- Ignore errors when the widget doesn't have a SetCheckedState or SetIsChecked function
     end
 
     --- Applies a switch style.
