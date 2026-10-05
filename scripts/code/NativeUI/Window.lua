@@ -209,6 +209,20 @@ function Window:DisableBlur()
     self:SetBlurStrength(0.0)
 end
 
+--- Sets the filter color of the window's root widget and all it's child components.
+-- @param color (table) Color to apply, in the form {R = 1.0, G = 1.0, B = 1.0, A = 1.0}.
+function Window:SetWidgetTintColor(color)
+    if not self.RootWidget or not Utils.IsValidObject(self.RootWidget) then return end
+
+    pcall(function()
+        if self.RootWidget.SetColorAndOpacity then
+            self.RootWidget:SetColorAndOpacity(color)
+        else
+            self.RootWidget.ColorAndOpacity = color
+        end
+    end)
+end
+
 --- Shows the window and switches the player to game-and-UI input.
 function Window:Show()
     if not self.RootWidget then return end
