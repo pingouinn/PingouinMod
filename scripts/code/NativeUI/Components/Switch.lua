@@ -7,7 +7,7 @@ local SwitchClass = nil
 local ActiveSwitches = {}
 local HookInstalled = false
 
--- Retrieves the UClass for the switch widget.
+--- Retrieves the UClass for the switch widget.
 -- @return (UClass|nil) The switch widget class.
 local function GetClass()
     if not Utils.IsValidObject(SwitchClass) then
@@ -16,10 +16,10 @@ local function GetClass()
     return SwitchClass
 end
 
--- Ensures that the switch click hook is installed to handle switch toggle events.
+--- Ensures that the switch click hook is installed to handle switch toggle events.
 local function EnsureHook()
     if HookInstalled then return end
-    HookInstalled = Core.RegisterButtonClickHandler(function(clickedWidget)
+    HookInstalled = Core.RegisterButtonClickHandler("switch", function(clickedWidget)
         if not clickedWidget.GetAddress then return end
         local switchObject = ActiveSwitches[tostring(clickedWidget:GetAddress())]
         if switchObject then switchObject:Toggle() end
@@ -33,7 +33,7 @@ local function ApplySwitchStyle(instance, stylePath)
     local styleObj = StyleHelper.ResolveStyle("Switch", stylePath)
     if not styleObj then return end
 
-    pcall(function()
+    Utils.TryCall("Apply switch style", function()
         local targetButton = Utils.IsValidObject(instance.WBP_ButtonBase) and instance.WBP_ButtonBase or instance
         targetButton.Style = styleObj
         if targetButton.SetStyle then
@@ -56,7 +56,7 @@ function SwitchComponent.Create(initialState, onToggle, stylePath)
     local instance = Core.UMG_Lib:Create(playerController, widgetClass, playerController)
     if not Utils.IsValidObject(instance) then return nil end
 
-    instance:SetVisibility(0)
+    Utils.TryCall("Show switch widget", function() instance:SetVisibility(Config.Visibility.VISIBLE) end)
     EnsureHook()
 
     local switchObject = {
@@ -74,7 +74,7 @@ function SwitchComponent.Create(initialState, onToggle, stylePath)
     -- @param state (boolean) New checked state.
     function switchObject:SetState(state)
         self.IsChecked = state and true or false
-        pcall(function()
+        Utils.TryCall("Set switch state", function()
             if self.Widget.SetCheckedState then
                 self.Widget:SetCheckedState(self.IsChecked)
             elseif self.Widget.SetIsChecked then

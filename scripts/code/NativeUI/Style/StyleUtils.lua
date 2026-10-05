@@ -11,7 +11,7 @@ function StyleHelper.ResolveStyle(category, stylePath)
     if not stylePath then return nil end
     if Utils.IsValidObject(stylePath) then return stylePath end
 
-    -- Cache paresseux par catégorie ("Button", "Text", etc.)
+    -- Keep a per-category cache for repeated style resolution.
     if not Cache[category] or not next(Cache[category]) then
         Cache[category] = StyleExtractor.GetCachedStyleType(category) or {}
     end

@@ -10,6 +10,8 @@ if not state then
         buttonClickHookInstalled = false
     }
     rawset(_G, "__PingouinNativeUICoreState", state)
+elseif state.buttonClickHandlers[1] then
+    state.buttonClickHandlers = {}
 end
 
 Core.UMG_Lib = nil
@@ -24,21 +26,19 @@ function Core.Init()
     return Utils.IsValidObject(Core.UMG_Lib)
 end
 
---- Registers a callback for CommonUI button clicks and installs the native hook once.
+--- Registers a named callback for CommonUI button clicks.
+-- @param handlerKey (string) Stable callback identifier used across reloads.
 -- @param handler (function) Callback receiving the clicked widget.
 -- @return (boolean) True when the handler was registered.
-function Core.RegisterButtonClickHandler(handler)
-    if type(handler) ~= "function" then return false end
-    for _, registeredHandler in ipairs(state.buttonClickHandlers) do
-        if registeredHandler == handler then return true end
-    end
-    table.insert(state.buttonClickHandlers, handler)
+function Core.RegisterButtonClickHandler(handlerKey, handler)
+    if type(handlerKey) ~= "string" or type(handler) ~= "function" then return false end
+    state.buttonClickHandlers[handlerKey] = handler
 
     if not state.buttonClickHookInstalled and StaticFindObject(Config.Paths.buttonClickFunction) then
         RegisterHook(Config.Paths.buttonClickFunction, function(context)
             local clickedWidget = context:get()
             if not Utils.IsValidObject(clickedWidget) then return end
-            for _, callback in ipairs(state.buttonClickHandlers) do
+            for _, callback in pairs(state.buttonClickHandlers) do
                 callback(clickedWidget)
             end
         end)
@@ -46,25 +46,5 @@ function Core.RegisterButtonClickHandler(handler)
     end
     return state.buttonClickHookInstalled
 end
-
--- Debug console command to list all active UserWidget classes in memory
-RegisterConsoleCommandHandler("ScrapWidgets", function(fullCommand, args, _)
-    print("[PingouinMod] Searching memory loaded widgets...\n")
-    local widgets = FindAllOf("UserWidget")
-    if widgets then
-        local seen = {}
-        for _, w in ipairs(widgets) do
-            local className = Utils.GetObjectName(w:GetClass())
-            if className and not seen[className] then
-                seen[className] = true
-                print("Found class: " .. className .. "\n")
-            end
-        end
-    else
-        print("No active UserWidget found.\n")
-    end
-    print("[PingouinMod] End of search.\n")
-    return false
-end)
 
 return Core

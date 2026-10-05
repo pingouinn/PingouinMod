@@ -28,10 +28,10 @@ function TextComponent.Create(initialText, stylePath, showLine)
     local instance = Core.UMG_Lib:Create(playerController, widgetClass, playerController)
     if not Utils.IsValidObject(instance) then return nil end
 
-    pcall(function() instance:SetVisibility(0) end)
-    pcall(function()
+    Utils.TryCall("Show text widget", function() instance:SetVisibility(Config.Visibility.VISIBLE) end)
+    Utils.TryCall("Set text line visibility", function()
         if Utils.IsValidObject(instance.IMG_Fade) then
-            instance.IMG_Fade:SetVisibility(showLine and 0 or 2)
+            instance.IMG_Fade:SetVisibility(showLine and Config.Visibility.VISIBLE or Config.Visibility.HIDDEN)
         end
     end)
 

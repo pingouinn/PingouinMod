@@ -1,5 +1,13 @@
 local Types = {}
 local textLibrary = nil
+local unpackValues = table.unpack or unpack
+
+--- Packs variadic values while preserving trailing nil values.
+-- @param ... (any) Values to pack.
+-- @return (table) Packed values and their count.
+local function PackValues(...)
+    return {n = select("#", ...), ...}
+end
 
 local TEXT_LIBRARY_PATH = "/Script/Engine.Default__KismetTextLibrary"
 
@@ -90,6 +98,45 @@ function Types.ToFText(value)
     end)
     if not success then return nil end
     return text
+end
+
+--- Executes a protected operation and reports failures with a consistent prefix.
+-- @param operationName (string) Operation description used in the error message.
+-- @param callback (function) Operation to execute.
+-- @return (boolean, any) Success state and callback results or error message.
+function Types.TryCall(operationName, callback)
+    if type(callback) ~= "function" then
+        return false, "callback must be a function"
+    end
+
+    local results = PackValues(pcall(callback))
+    if not results[1] then
+        print(string.format("[PingouinMod Error] %s: %s", operationName, tostring(results[2])))
+        return false, results[2]
+    end
+
+    return true, unpackValues(results, 2, results.n)
+end
+
+--- Constructs a UE4SS object, retrying with the extended signature when needed.
+-- @param objectClass (UClass) Class to instantiate.
+-- @param outer (UObject) Memory owner for the new object.
+-- @return (UObject|nil) Constructed object, or nil when construction fails.
+function Types.ConstructObject(objectClass, outer)
+    if not StaticConstructObject or not Types.IsValidObject(objectClass) or not Types.IsValidObject(outer) then
+        return nil
+    end
+
+    local success, instance = Types.TryCall("StaticConstructObject", function()
+        return StaticConstructObject(objectClass, outer)
+    end)
+    if success and Types.IsValidObject(instance) then return instance end
+
+    success, instance = Types.TryCall("StaticConstructObject extended signature", function()
+        return StaticConstructObject(objectClass, outer, nil, 0, 0, false, nil)
+    end)
+    if success and Types.IsValidObject(instance) then return instance end
+    return nil
 end
 
 

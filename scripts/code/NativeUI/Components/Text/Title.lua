@@ -27,7 +27,7 @@ function TitleComponent.Create(initialText, stylePath)
     local instance = Core.UMG_Lib:Create(playerController, widgetClass, playerController)
     if not Utils.IsValidObject(instance) then return nil end
 
-    pcall(function() instance:SetVisibility(0) end)
+    Utils.TryCall("Show title widget", function() instance:SetVisibility(Config.Visibility.VISIBLE) end)
 
     local titleObject = {
         Widget = instance,

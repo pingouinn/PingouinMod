@@ -7,7 +7,7 @@ local ButtonClass = nil
 local ActiveButtons = {}
 local HookInstalled = false
 
--- Retrieves the UClass for the button widget.
+--- Retrieves the UClass for the button widget.
 -- @return (UClass|nil) The button widget class.
 local function GetClass()
     if not Utils.IsValidObject(ButtonClass) then
@@ -16,10 +16,10 @@ local function GetClass()
     return ButtonClass
 end
 
--- Ensures that the button click hook is installed to handle button click events.
+--- Ensures that the button click hook is installed to handle button click events.
 local function EnsureHook()
     if HookInstalled then return end
-    HookInstalled = Core.RegisterButtonClickHandler(function(clickedWidget)
+    HookInstalled = Core.RegisterButtonClickHandler("button", function(clickedWidget)
         if not clickedWidget.GetAddress then return end
         local buttonObject = ActiveButtons[tostring(clickedWidget:GetAddress())]
         if buttonObject and buttonObject.OnClickCallback then
@@ -35,20 +35,24 @@ local function ApplyButtonStyle(instance, stylePath)
     local styleClass = StyleHelper.ResolveStyle("Button", stylePath)
     if not styleClass then return end
 
-    pcall(function() instance:SetStyle(styleClass) end)
+    Utils.TryCall("Apply button style", function() instance:SetStyle(styleClass) end)
 
-    local ok, cdo = pcall(function() return styleClass:GetDefaultObject() end)
+    local ok, cdo = Utils.TryCall("Read button style defaults", function()
+        return styleClass:GetDefaultObject()
+    end)
     if not ok or not Utils.IsValidObject(cdo) then return end
 
     if cdo.NormalTextStyle and Utils.IsValidObject(instance.BTNText) then
-        pcall(function()
+        Utils.TryCall("Apply button text style", function()
             instance.BTNText.Style = cdo.NormalTextStyle
             if instance.BTNText.SetStyle then instance.BTNText:SetStyle(cdo.NormalTextStyle) end
         end)
     end
 
     if cdo.NormalBase and cdo.NormalBase.TintColor and instance.SetColorAndOpacity then
-        pcall(function() instance:SetColorAndOpacity(cdo.NormalBase.TintColor.SpecifiedColor) end)
+        Utils.TryCall("Apply button color", function()
+            instance:SetColorAndOpacity(cdo.NormalBase.TintColor.SpecifiedColor)
+        end)
     end
 end
 
@@ -66,7 +70,7 @@ function ButtonComponent.Create(initialText, onClick, stylePath)
     local instance = Core.UMG_Lib:Create(playerController, widgetClass, playerController)
     if not Utils.IsValidObject(instance) then return nil end
 
-    instance:SetVisibility(0)
+    Utils.TryCall("Show button widget", function() instance:SetVisibility(Config.Visibility.VISIBLE) end)
     instance.bIsFocusable = true
     EnsureHook()
 
@@ -86,11 +90,11 @@ function ButtonComponent.Create(initialText, onClick, stylePath)
         self.Text = tostring(value or "")
         local ftext = Utils.ToFText(self.Text)
 
-        pcall(function() instance.Text = ftext end)
-        pcall(function()
+        Utils.TryCall("Set button text property", function() instance.Text = ftext end)
+        Utils.TryCall("Set button text", function()
             if instance.SetText then instance:SetText(ftext) end
         end)
-        pcall(function()
+        Utils.TryCall("Set button label", function()
             if Utils.IsValidObject(instance.BTNText) then
                 instance.BTNText:SetText(ftext)
             end
