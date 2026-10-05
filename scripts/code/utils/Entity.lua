@@ -31,7 +31,7 @@ function Entity.GetObjectName(object)
 
     local success, name = Types.TryCall("Read object name", function()
         if object.GetName then  return object:GetName() end
-    end)
+    end, not DEBUG_MODE)
 
     if not success or not name then
         success, name = Types.TryCall("Read object full name", function()

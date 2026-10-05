@@ -19,6 +19,7 @@ print("[PingouinMod] Config INI path: " .. SCRIPT_DIR .. "config.ini")
 LIP.INIPATH = SCRIPT_DIR .. "config.ini"
 
 local ConfigData = LIP.loadWrapper()
+local SettingsConfig = ConfigData.Settings or {}
 local KeybindConfig = ConfigData.Keybinds or {}
 
 local function ResolveConfiguredKey(settingName, defaultKey)
@@ -39,6 +40,8 @@ Keybinds = {
 MOD_FOLDER = Utils.GetModFolder(clean_script_path)
 print("[PingouinMod] Mod folder path: " .. MOD_FOLDER .. "\n")
 
+-- DEBUG_MODE is a global variable that controls whether debug messages and protected calls are printed.
+DEBUG_MODE = GB_StrToBool[tostring(SettingsConfig.DEBUG_MODE)] or false
 
 -- TODO : Automatically detect scripts instead of hardcoding the list of scripts to load. 
 

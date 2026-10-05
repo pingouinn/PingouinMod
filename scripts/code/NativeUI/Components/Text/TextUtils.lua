@@ -39,7 +39,7 @@ function TextUtils.SetText(instance, text)
     Utils.TryCall("Set text property", function() instance.Text = text end)
     Utils.TryCall("Set widget text", function()
         if instance.SetText then instance:SetText(text) end
-    end, true) -- Ignore errors when the widget doesn't have a SetText function
+    end, not DEBUG_MODE) -- Ignore errors when the widget doesn't have a SetText function
     local targetText = ResolveTextBlock(instance)
     if targetText then
         Utils.TryCall("Set text block value", function() targetText:SetText(text) end)

@@ -40,7 +40,7 @@ local function GetBlurWidget(instance)
         if tree.FindWidget then
             local success, blur = Utils.TryCall("Find background blur", function()
                 return tree:FindWidget("BackgroundBlur_0")
-            end, true) -- Ignore errors when the widget tree doesn't have a FindWidget function
+            end, not DEBUG_MODE) -- Ignore errors when the widget tree doesn't have a FindWidget function
             if success and Utils.IsValidObject(blur) then
                 return blur
             end
