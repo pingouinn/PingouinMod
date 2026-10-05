@@ -107,13 +107,28 @@ local function BuildDashboard()
         print("Valeur interne Slider_18 : " .. tostring(raw))
         print("Valeur GetValue Blueprint : " .. tostring(fovSlider:GetValue()))
     end))
+
+
+    -- TEXTBOX
+    local searchRow = NativeUI.CreateRow(colRight)
+    colRight:Add(searchRow, 0.0, { Left = 0.0, Top = 4.0, Right = 0.0, Bottom = 4.0 })
+
+    local ipInput = NativeUI.CreateTextInput("127.0.0.1", "", function(text, method)
+        print(string.format("[NativeUI] Texte validé (méthode %s) : %s", tostring(method), text))
+    end, function(text)
+        print(string.format("[NativeUI] Texte modifié : %s", text))
+    end)
+
+    searchRow:Add(ipInput, 1.0, nil, 2, { height = 36.0 })
 end
 
 RegisterKeyBind(Key.I, function()
-    if not Dashboard then
-        BuildDashboard()
-    end
-    if Dashboard then
-        Dashboard:Toggle()
+    if not NativeUI.IsAnyInputFocused() then
+        if not Dashboard then
+            BuildDashboard()
+        end
+        if Dashboard then
+            Dashboard:Toggle()
+        end
     end
 end)
