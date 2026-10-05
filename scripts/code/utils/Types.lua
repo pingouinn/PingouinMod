@@ -100,6 +100,39 @@ function Types.ToFText(value)
     return text
 end
 
+--- Retrieves a string from an Unreal FText.
+-- @param ftext (FText) The FText to convert.
+-- @return (string|nil) The converted string, or nil when the text library is unavailable.
+function Types.GetFTextString(ftext)
+    if not Types.IsValidObject(textLibrary) then
+        local success, library = pcall(function()
+            return StaticFindObject(TEXT_LIBRARY_PATH)
+        end)
+        textLibrary = success and library or nil
+    end
+
+    if not Types.IsValidObject(textLibrary) then return nil end
+
+    local success, ustr = pcall(function()
+        return textLibrary:Conv_TextToString(ftext)
+    end)
+    if not success or not ustr then return nil end
+
+    -- Convert the UE4SS string to a Lua string, handling different possible representations.
+    local luaString = ""
+    if type(ustr) == "string" then
+        luaString = ustr
+    elseif ustr.ToString then
+        luaString = ustr:ToString()
+    elseif ustr.get then
+        luaString = tostring(ustr:get())
+    else
+        luaString = tostring(ustr)
+    end
+
+    return luaString
+end
+
 --- Executes a protected operation and reports failures with a consistent prefix.
 -- @param operationName (string) Operation description used in the error message.
 -- @param callback (function) Operation to execute.
