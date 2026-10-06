@@ -64,7 +64,7 @@ end
 -- @param brushName (string) The name of the brush property to update (e.g., "BackgroundImageNormal").
 -- @param color (table) A table representing the color with fields R, G, B, A (values between 0.0 and 1.0).
 local function UpdateStyleBrush(widget, brushName, color)
-    if not Utils.IsValidObject(widget) or not widget.WidgetStyle then return end
+    if not Utils.IsValidObject(widget) or not widget.WidgetStyle or not color then return end
 
     local style = widget.WidgetStyle
     local brush = style[brushName]
@@ -75,11 +75,10 @@ local function UpdateStyleBrush(widget, brushName, color)
         ColorUseRule = 0 -- UseColor_Specified
     }
 
-    -- Apply the updated style back to the widget. Depending on the widget's implementation, you may need to call a method to refresh or synchronize the properties.
-    if widget.SetWidgetStyle then
-        widget:SetWidgetStyle(style)
-    elseif widget.SynchronizeProperties then
-        widget:SynchronizeProperties()
+    widget.WidgetStyle = style
+
+    if widget.InvalidateLayoutAndVolatility then
+        Utils.TryCall("Invalidate Layout and Volatility InputText", function() widget:InvalidateLayoutAndVolatility() end)
     end
 end
 
@@ -88,9 +87,9 @@ end
 -- @param initialText (string|nil) Default text inside the box.
 -- @param onCommit (function|nil) Callback fn(text, commitMethod, inputObject) on Enter or focus lost.
 -- @param onChange (function|nil) Callback fn(text, inputObject) on text change.
--- @param isPassword (boolean|nil) Whether the input should be treated as a password.
+-- @param textColor (table|nil) Optional color table { R, G, B, A } for text color.
 -- @return (table|nil) TextInput wrapper object.
-function TextInputComponent.Create(placeholder, initialText, onCommit, onChange, isPassword)
+function TextInputComponent.Create(placeholder, initialText, onCommit, onChange, textColor)
     Core.Init()
     local PC = Utils.GetPlayerController()
     local widgetClass = GetClass()
@@ -107,14 +106,12 @@ function TextInputComponent.Create(placeholder, initialText, onCommit, onChange,
     Utils.TryCall("Configure text input defaults", function()
         instance:SetText(Utils.ToFText(initial))
         instance:SetHintText(Utils.ToFText(hint))
-        instance.bIsReadOnly = false
-        instance.bIsPassword = isPassword or false
 
-        local pureWhite = { R = 1.0, G = 1.0, B = 1.0, A = 1.0 }
+        local textColor = textColor or { R = 1.0, G = 1.0, B = 1.0, A = 1.0 }
 
         -- 0 = ESlateColorStylingMode::UseColor_Specified
         local slateWhite = {
-            SpecifiedColor = pureWhite,
+            SpecifiedColor = textColor,
             ColorUseRule = 0
         }
 
@@ -143,7 +140,7 @@ function TextInputComponent.Create(placeholder, initialText, onCommit, onChange,
             end
 
             if style.TextStyle and style.TextStyle.ColorAndOpacity then
-                style.TextStyle.ColorAndOpacity.SpecifiedColor = pureWhite
+                style.TextStyle.ColorAndOpacity.SpecifiedColor = textColor
                 style.TextStyle.ColorAndOpacity.ColorUseRule = 0
             end
 
@@ -166,7 +163,7 @@ function TextInputComponent.Create(placeholder, initialText, onCommit, onChange,
         LastText = initial,
         HintText = hint,
         OnCommitCallback = onCommit,
-        OnChangeCallback = onChange
+        OnChangeCallback = onChange,
     }
 
     if instance.GetAddress then
@@ -209,12 +206,6 @@ function TextInputComponent.Create(placeholder, initialText, onCommit, onChange,
         end
     end
 
-    --- Refreshes the native widget to reflect the current text and hint text.
-    function inputObject:Refresh()
-        self:SetText(self.Text)
-        self:SetHintText(self.HintText)
-    end
-
     --- Sets the background color of the input box when not hovered or focused.
     -- @param color (table) RGB(A) table like { R = 1.0, G = 1.0, B = 1.0, A = 1.0 }
     function inputObject:SetBackgroundColorNormal(color)
@@ -233,25 +224,22 @@ function TextInputComponent.Create(placeholder, initialText, onCommit, onChange,
         UpdateStyleBrush(self.Widget, "BackgroundImageFocused", color)
     end
 
-    --- Sets the text color inside the input box.
+    --- Sets the text color inside the input box. 
+    -- WARNING : Slate does not expose a direct method to refresh the text color, so this method will not do anything unless you're lucky and slate decides to reinstanciate or interrogate the widget. 
+    -- This is a known limitation of Unreal Engine's UMG system, use color in the constructor instead.
     -- @param color (table) RGB(A) table like { R = 1.0, G = 1.0, B = 1.0, A = 1.0 }
     function inputObject:SetTextColor(color)
         if not Utils.IsValidObject(self.Widget) or not color then return end
 
-        local slateColor = {
-            SpecifiedColor = color,
-            ColorUseRule = 0 -- UseColor_Specified
-        }
+        self.TextColor = color
 
-        if self.Widget.SetForegroundColor then
-            self.Widget:SetForegroundColor(slateColor)
-        else
-            self.Widget.ForegroundColor = slateColor
-        end
-
-        if self.Widget.WidgetStyle and self.Widget.WidgetStyle.TextStyle and self.Widget.WidgetStyle.TextStyle.ColorAndOpacity then
-            self.Widget.WidgetStyle.TextStyle.ColorAndOpacity.SpecifiedColor = color
-            self.Widget.WidgetStyle.TextStyle.ColorAndOpacity.ColorUseRule = 0
+        if self.Widget.WidgetStyle and self.Widget.WidgetStyle.TextStyle then
+            local textStyle = self.Widget.WidgetStyle.TextStyle
+            if textStyle.ColorAndOpacity then
+                textStyle.ColorAndOpacity.SpecifiedColor = color
+                textStyle.ColorAndOpacity.ColorUseRule = 0
+            end
+            self.Widget.WidgetStyle = self.Widget.WidgetStyle
         end
     end
 
@@ -318,17 +306,47 @@ function TextInputComponent.Create(placeholder, initialText, onCommit, onChange,
     function inputObject:SetReadOnly(isReadOnly)
         if Utils.IsValidObject(self.Widget) and self.Widget.SetIsReadOnly then
             self.Widget:SetIsReadOnly(isReadOnly == true)
+            self.isReadOnly = isReadOnly == true
         end
+    end
+
+    --- Checks if the input box is currently read-only.
+    -- @return (boolean) True if the input box is read-only, false otherwise.
+    function inputObject:GetIsReadOnly()
+        return self.isReadOnly == true
     end
 
     --- Toggles password masking mode.
     -- @param isPassword (boolean)
     function inputObject:SetIsPassword(isPassword)
-        if not Utils.IsValidObject(self.Widget) then return end
-        self.Widget.bIsPassword = isPassword == true
-        if self.Widget.SetIsPassword then
+        if Utils.IsValidObject(self.Widget) and self.Widget.SetIsPassword then
             self.Widget:SetIsPassword(isPassword == true)
+            self.isPassword = isPassword == true
         end
+    end
+
+    --- Checks if the input box is currently in password mode.
+    -- @return (boolean) True if the input box is in password mode, false otherwise.
+    function inputObject:GetIsPassword()
+        return self.isPassword == true
+    end
+
+    --- Sets the visibility of the input box widget.
+    -- @param visibility (number) NativeUI.Visibility.VISIBLE, NativeUI.Visibility.COLLAPSED, or NativeUI.Visibility.HIDDEN
+    -- @see NativeUIVisibilityConstants
+    function inputObject:SetVisibility(visibility)
+        if Utils.IsValidObject(self.Widget) and self.Widget.SetVisibility then
+            self.Widget:SetVisibility(visibility)
+        end
+    end
+
+    --- Retrieves the current widget visibility.
+    -- @return (number|nil) NativeUI.Visibility.VISIBLE, NativeUI.Visibility.COLLAPSED, or NativeUI.Visibility.HIDDEN
+    function inputObject:GetVisibility()
+        if not Utils.IsValidObject(self.Widget) or not self.Widget.GetVisibility then return nil end
+        local ok, vis = Utils.TryCall("TextInput GetVisibility", function() return self.Widget:GetVisibility() end)
+        if ok then return vis end
+        return nil
     end
 
     --- Set keyboard focus to this input box, allowing the user to type into it.

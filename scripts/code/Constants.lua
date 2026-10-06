@@ -31,7 +31,13 @@
 
 ---@class NativeUIVisibilityConstants
 ---@field VISIBLE integer UMG Slate visibility state: visible
+---@field COLLAPSED integer UMG Slate visibility state: collapsed
 ---@field HIDDEN integer UMG Slate visibility state: hidden
+
+---@class NativeUIJustificationConstants
+---@field LEFT integer Text justification: left-aligned
+---@field CENTER integer Text justification: center-aligned
+---@field RIGHT integer Text justification: right-aligned
 
 ---@class NativeUIInputConstants
 ---@field MOUSE_LOCK_DO_NOT_LOCK integer Viewport mouse capture mode: do not lock mouse cursor
@@ -96,7 +102,14 @@ Constants.NativeUI.Layout = {
 
 Constants.NativeUI.Visibility = {
     VISIBLE = 0,
+    COLLAPSED = 1,
     HIDDEN = 2,
+}
+
+Constants.NativeUI.Justification = {
+    LEFT = 0,
+    CENTER = 1,
+    RIGHT = 2,
 }
 
 Constants.NativeUI.Input = {

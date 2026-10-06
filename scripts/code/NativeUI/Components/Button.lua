@@ -1,4 +1,5 @@
---- Button.lua provides a wrapper for creating and managing button components in Unreal Engine's NativeUI system. It includes methods for setting button text, applying styles, handling click events, and managing active button instances.
+--- Button.lua provides a wrapper for creating and managing button components in Unreal Engine's NativeUI system.
+-- It includes methods for setting button text, applying styles, handling click events, and managing active button instances.
 -- @author PingouinTheDev
 
 local Core = require("code/NativeUI/Core")
@@ -31,29 +32,6 @@ local function EnsureHook()
     end)
 end
 
---- Updates the background color of a specific brush in the button style.
--- @param widget (UWidget) The native button widget.
--- @param brushName (string) State brush name ("Normal", "Hovered", "Pressed", "Disabled").
--- @param color (table) RGB(A) table like { R = 1.0, G = 1.0, B = 1.0, A = 1.0 }.
-local function UpdateButtonBrush(widget, brushName, color)
-    if not Utils.IsValidObject(widget) or not widget.WidgetStyle then return end
-
-    local style = widget.WidgetStyle
-    local brush = style[brushName]
-    if not brush then return end
-
-    brush.TintColor = {
-        SpecifiedColor = color,
-        ColorUseRule = 0 -- UseColor_Specified
-    }
-
-    if widget.SetStyle then
-        widget:SetStyle(style)
-    elseif widget.SynchronizeProperties then
-        widget:SynchronizeProperties()
-    end
-end
-
 --- Applies a button style to the given widget instance.
 -- @param instance (UUserWidget) Widget instance to style.
 -- @param stylePath (string|UObject) Style identifier, asset path, or style object.
@@ -65,7 +43,7 @@ local function ApplyButtonStyle(instance, stylePath)
 
     local ok, cdo = Utils.TryCall("Read button style defaults", function()
         return styleClass:GetDefaultObject()
-    end, not DEBUG_MODE) -- Ignore errors when the style class doesn't have a GetDefaultObject function
+    end, not DEBUG_MODE)
     if not ok or not Utils.IsValidObject(cdo) then return end
 
     if cdo.NormalTextStyle and Utils.IsValidObject(instance.BTNText) then
@@ -103,7 +81,8 @@ function ButtonComponent.Create(initialText, onClick, stylePath)
     local buttonObject = {
         Widget = instance,
         Text = initialText or "Action",
-        OnClickCallback = onClick
+        OnClickCallback = onClick,
+        isEnabled = true
     }
 
     if instance.GetAddress then
@@ -140,15 +119,10 @@ function ButtonComponent.Create(initialText, onClick, stylePath)
         return self.Text
     end
 
-    --- Applies a button style.
-    -- @param stylePath (string|nil) Style identifier or asset path.
-    function buttonObject:SetStyle(stylePath)
-        ApplyButtonStyle(self.Widget, stylePath)
-    end
-
-    --- Refreshes the native widget from the wrapper state.
-    function buttonObject:Refresh()
-        self:SetText(self.Text)
+    --- Applies a button style preset.
+    -- @param path (string|nil) Style identifier or asset path.
+    function buttonObject:SetStyle(path)
+        ApplyButtonStyle(self.Widget, path)
     end
 
     --- Simulates a programmatic click on the button.
@@ -161,16 +135,44 @@ function ButtonComponent.Create(initialText, onClick, stylePath)
     --- Enables or disables the button interactivity.
     -- @param isEnabled (boolean) Whether the button should be interactive.
     function buttonObject:SetEnabled(isEnabled)
+        self.isEnabled = isEnabled == true
         if Utils.IsValidObject(self.Widget) and self.Widget.SetIsEnabled then
-            self.Widget:SetIsEnabled(isEnabled == true)
+            self.Widget:SetIsEnabled(self.isEnabled)
         end
     end
 
     --- Checks if the button is currently enabled.
     -- @return (boolean) True if enabled, false otherwise.
-    function buttonObject:IsEnabled()
-        if not Utils.IsValidObject(self.Widget) then return false end
-        return self.Widget.GetIsEnabled and self.Widget:GetIsEnabled() or true
+    function buttonObject:GetIsEnabled()
+        return self.isEnabled == true
+    end
+
+    --- Sets the global tint color of the button widget.
+    -- @param color (table) RGB(A) table like { R = 1.0, G = 1.0, B = 1.0, A = 1.0 }.
+    function buttonObject:SetColor(color)
+        if not Utils.IsValidObject(self.Widget) or not color then return end
+
+        local linearColor = {
+            R = color.R or 1.0,
+            G = color.G or 1.0,
+            B = color.B or 1.0,
+            A = color.A or 1.0
+        }
+
+        if self.Widget.SetColorAndOpacity then
+            Utils.TryCall("Button set color",function() self.Widget:SetColorAndOpacity(linearColor) end)
+        end
+
+        if self.Widget.NormalBase and self.Widget.NormalBase.TintColor then
+            local tint = self.Widget.NormalBase.TintColor
+            if tint.SpecifiedColor then
+                tint.SpecifiedColor.R = linearColor.R
+                tint.SpecifiedColor.G = linearColor.G
+                tint.SpecifiedColor.B = linearColor.B
+                tint.SpecifiedColor.A = linearColor.A
+            end
+            Utils.TryCall("Button set tint color",function() tint.ColorUseRule = 0 end)
+        end
     end
 
     --- Sets the text color of the button label.
@@ -227,30 +229,6 @@ function ButtonComponent.Create(initialText, onClick, stylePath)
         end
     end
 
-    --- Sets background tint for the normal state.
-    -- @param color (table) RGB(A) table like { R = 1.0, G = 1.0, B = 1.0, A = 1.0 }.
-    function buttonObject:SetBackgroundColorNormal(color)
-        UpdateButtonBrush(self.Widget, "Normal", color)
-    end
-
-    --- Sets background tint for the hovered state.
-    -- @param color (table) RGB(A) table like { R = 1.0, G = 1.0, B = 1.0, A = 1.0 }.
-    function buttonObject:SetBackgroundColorHovered(color)
-        UpdateButtonBrush(self.Widget, "Hovered", color)
-    end
-
-    --- Sets background tint for the pressed state.
-    -- @param color (table) RGB(A) table like { R = 1.0, G = 1.0, B = 1.0, A = 1.0 }.
-    function buttonObject:SetBackgroundColorPressed(color)
-        UpdateButtonBrush(self.Widget, "Pressed", color)
-    end
-
-    --- Sets background tint for the disabled state.
-    -- @param color (table) RGB(A) table like { R = 1.0, G = 1.0, B = 1.0, A = 1.0 }.
-    function buttonObject:SetBackgroundColorDisabled(color)
-        UpdateButtonBrush(self.Widget, "Disabled", color)
-    end
-
     --- Sets the tooltip text shown when hovering the button.
     -- @param tooltip (string) Tooltip text.
     function buttonObject:SetToolTipText(tooltip)
@@ -259,12 +237,36 @@ function ButtonComponent.Create(initialText, onClick, stylePath)
         end
     end
 
+    --- Retrieves the current tooltip text of the button.
+    -- @return (string) Current tooltip text.
+    function buttonObject:GetToolTipText()
+        if Utils.IsValidObject(self.Widget) and self.Widget.GetToolTipText then
+            return Utils.GetFTextString(self.Widget:GetToolTipText())
+        end
+        return ""
+    end
+
+    --- Unsets the tooltip text, removing any tooltip from the button.
+    function buttonObject:UnsetToolTipText()
+        self:SetToolTipText("")
+    end
+
     --- Sets the visibility of the button widget.
-    -- @param visibility (number) ESlateVisibility enum value (from Constants.NativeUI.Visibility).
+    -- @param visibility (number) NativeUI.Visibility.VISIBLE, NativeUI.Visibility.COLLAPSED, or NativeUI.Visibility.HIDDEN
+    -- @see NativeUIVisibilityConstants
     function buttonObject:SetVisibility(visibility)
         if Utils.IsValidObject(self.Widget) and self.Widget.SetVisibility then
             self.Widget:SetVisibility(visibility)
         end
+    end
+
+    --- Retrieves the current widget visibility.
+    -- @return (number|nil) NativeUI.Visibility.VISIBLE, NativeUI.Visibility.COLLAPSED, or NativeUI.Visibility.HIDDEN
+    function buttonObject:GetVisibility()
+        if not Utils.IsValidObject(self.Widget) or not self.Widget.GetVisibility then return nil end
+        local ok, vis = Utils.TryCall("Button GetVisibility", function() return self.Widget:GetVisibility() end)
+        if ok then return vis end
+        return nil
     end
 
     buttonObject:SetStyle(stylePath)
