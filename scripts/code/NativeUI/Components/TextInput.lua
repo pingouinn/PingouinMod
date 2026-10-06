@@ -1,5 +1,8 @@
+--- TextInput.lua provides a wrapper for creating and managing text input boxes in Unreal Engine's NativeUI system. It includes methods for setting and retrieving text, handling focus, customizing appearance, and managing callbacks for text changes and commit events.
+-- @author PingouinTheDev
+
 local Core = require("code/NativeUI/Core")
-local Config = require("code/NativeUI/Config")
+local Constants = require("code/Constants")
 
 local TextInputComponent = {}
 local TextBoxClass = nil
@@ -10,7 +13,7 @@ local WatcherActive = false
 -- @return (UClass|nil)
 local function GetClass()
     if not Utils.IsValidObject(TextBoxClass) then
-        TextBoxClass = StaticFindObject("/Script/UMG.EditableTextBox")
+        TextBoxClass = StaticFindObject(Constants.NativeUI.Paths.TEXTBOX_CLASS)
     end
     return TextBoxClass
 end
@@ -145,9 +148,9 @@ function TextInputComponent.Create(placeholder, initialText, onCommit, onChange,
             end
 
             -- Using Afacad font
-            local fontObj = StaticFindObject("/Game/Wildfire/Fonts/MissionFont/Afacad_Font.Afacad_Font")
+            local fontObj = StaticFindObject(Constants.NativeUI.Paths.FONT_AFACAD)
             if not fontObj then
-                fontObj = UObject.Load("/Game/Wildfire/Fonts/MissionFont/Afacad_Font.Afacad_Font")
+                fontObj = UObject.Load(Constants.NativeUI.Paths.FONT_AFACAD)
             end
 
             if fontObj and style.TextStyle and style.TextStyle.Font then
@@ -172,7 +175,7 @@ function TextInputComponent.Create(placeholder, initialText, onCommit, onChange,
 
     EnsureWatcher()
 
-    -- Sets the text inside the input box and updates the internal state.
+    --- Sets the text inside the input box and updates the internal state.
     -- @param newText (string) The new text to set in the input box.
     function inputObject:SetText(newText)
         self.Text = tostring(newText or "")
@@ -182,7 +185,7 @@ function TextInputComponent.Create(placeholder, initialText, onCommit, onChange,
         end
     end
 
-    -- Retrieves the current text from the input box, updating the internal state if necessary.
+    --- Retrieves the current text from the input box, updating the internal state if necessary.
     -- @return (string) The current text in the input box.
     function inputObject:GetText()
         if Utils.IsValidObject(self.Widget) and self.Widget.GetText then
@@ -192,12 +195,12 @@ function TextInputComponent.Create(placeholder, initialText, onCommit, onChange,
         return self.Text
     end
 
-    -- Clears the text input box.
+    --- Clears the text input box.
     function inputObject:Clear()
         self:SetText("")
     end
 
-    -- Sets the hint text for the input box.
+    --- Sets the hint text for the input box.
     -- @param newHint (string) The new hint text to display when the input is empty.
     function inputObject:SetHintText(newHint)
         self.HintText = tostring(newHint or "")
@@ -206,19 +209,19 @@ function TextInputComponent.Create(placeholder, initialText, onCommit, onChange,
         end
     end
 
-    -- Refreshes the native widget to reflect the current text and hint text.
+    --- Refreshes the native widget to reflect the current text and hint text.
     function inputObject:Refresh()
         self:SetText(self.Text)
         self:SetHintText(self.HintText)
     end
 
-    -- Sets the background color of the input box when not hovered or focused.
+    --- Sets the background color of the input box when not hovered or focused.
     -- @param color (table) RGB(A) table like { R = 1.0, G = 1.0, B = 1.0, A = 1.0 }
     function inputObject:SetBackgroundColorNormal(color)
         UpdateStyleBrush(self.Widget, "BackgroundImageNormal", color)
     end
 
-    -- Sets the background color of the input box when hovered.
+    --- Sets the background color of the input box when hovered.
     -- @param color (table) RGB(A) table like { R = 1.0, G = 1.0, B = 1.0, A = 1.0 }
     function inputObject:SetBackgroundColorHovered(color)
         UpdateStyleBrush(self.Widget, "BackgroundImageHovered", color)
@@ -285,7 +288,7 @@ function TextInputComponent.Create(placeholder, initialText, onCommit, onChange,
         end
     end
 
-    -- Sets the input box to an error state, changing its background colors to indicate an error.
+    --- Sets the input box to an error state, changing its background colors to indicate an error.
     -- @param isError (boolean) Whether to enable or disable the error state.
     function inputObject:SetErrorState(isError)
         if isError then
@@ -328,7 +331,7 @@ function TextInputComponent.Create(placeholder, initialText, onCommit, onChange,
         end
     end
 
-    -- Set keyboard focus to this input box, allowing the user to type into it.
+    --- Set keyboard focus to this input box, allowing the user to type into it.
     function inputObject:SetKeyboardFocus()
         if Utils.IsValidObject(self.Widget) and self.Widget.SetKeyboardFocus then
             self.Widget:SetKeyboardFocus()
@@ -336,7 +339,7 @@ function TextInputComponent.Create(placeholder, initialText, onCommit, onChange,
         end
     end
 
-    -- Checks if this input box currently has keyboard focus.
+    --- Checks if this input box currently has keyboard focus.
     -- @return (boolean) True if the input box has focus, false otherwise.
     function inputObject:HasFocus()
         if not Utils.IsValidObject(self.Widget) then return false end

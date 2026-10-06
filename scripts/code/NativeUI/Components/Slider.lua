@@ -1,5 +1,8 @@
+--- Slider.lua provides a wrapper for creating and managing slider components in Unreal Engine's NativeUI system. It includes methods for setting and retrieving slider values, handling value change events, and managing active slider instances.
+-- @author PingouinTheDev
+
 local Core = require("code/NativeUI/Core")
-local Config = require("code/NativeUI/Config")
+local Constants = require("code/Constants")
 
 local SliderComponent = {}
 local SliderClass = nil
@@ -10,9 +13,9 @@ local WatcherActive = false
 -- @return (UClass|nil) The slider widget class.
 local function GetClass()
     if not Utils.IsValidObject(SliderClass) then
-        SliderClass = StaticFindObject(Config.Paths.sliderClass)
+        SliderClass = StaticFindObject(Constants.NativeUI.Paths.SLIDER_CLASS)
         if not SliderClass then
-            SliderClass = UObject.Load(Config.Paths.sliderClass)
+            SliderClass = UObject.Load(Constants.NativeUI.Paths.SLIDER_CLASS)
         end
     end
     return SliderClass

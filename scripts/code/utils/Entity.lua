@@ -1,3 +1,6 @@
+--- Entity.lua provides utility functions for interacting with Unreal Engine entities, including actors and objects. It includes methods to check vehicle status, retrieve actor locations, resolve static meshes, and manage entity collision.
+-- @author PingouinTheDev
+
 local Types = require("code/utils/Types")
 local Entity = {}
 

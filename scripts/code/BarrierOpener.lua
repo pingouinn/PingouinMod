@@ -1,3 +1,6 @@
+--- BarrierOpener.lua is a utility that automatically opens nearby barriers when the player is in a vehicle and optionally closes them when the player moves away. It tracks each barrier's state independently to avoid conflicts.
+-- @author PingouinTheDev
+
 BarrierOpener = {}
 
 -- Track each barrier independently so one opening does not block the others.
@@ -9,7 +12,7 @@ local waitingForLevel = false
 local searchLoopRunning = false
 local NO_BARRIER_CHECK_LIMIT = 5
 
--- Opens nearby barriers and optionally closes them when the player moves away.
+--- Opens nearby barriers and optionally closes them when the player moves away.
 -- @param closeWhenFar (boolean) If true, barriers will close when the player is far away.
 -- @return (boolean) True if at least one barrier was found and processed, false if no barriers were found, nil if the player is not in a vehicle.
 function BarrierOpener.OpenBarriers(closeWhenFar)
@@ -51,7 +54,7 @@ function BarrierOpener.OpenBarriers(closeWhenFar)
     return validBarrierFound
 end
 
--- Starts the barrier search loop.
+--- Starts the barrier search loop.
 local function StartBarrierSearch()
     if searchLoopRunning then return end
     searchLoopRunning = true

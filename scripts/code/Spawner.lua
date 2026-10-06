@@ -1,3 +1,6 @@
+--- Spawner.lua provides functions to spawn and delete actors in front of the player, track them, and manage their lifecycle. It also registers console commands for spawning and deleting actors, as well as retrieving information about tracked actors.
+-- @author PingouinTheDev
+
 local Spawner = {}
 
 Spawner.entitytracker = {}
@@ -18,8 +21,7 @@ local function IsStaticMeshAsset(asset, assetPath)
     return success and isStaticMesh == true
 end
 
--- Resolve a typed mesh reference before passing it to SetStaticMesh.
--- Asset loading can be asynchronous, so retry a few times.
+--- Resolve a typed mesh reference before passing it to SetStaticMesh. Asset loading can be asynchronous, so retry a few times.
 -- @param assetPath (string) The full Unreal asset path
 -- @param verbose (boolean) Whether to print debug messages
 -- @return (UStaticMesh|nil) The resolved mesh reference, or nil if not found
@@ -231,19 +233,21 @@ function Spawner.GC()
     return false
 end
 
-
+--- Registers a console command "Spawn" that allows the player to spawn an actor of a specified class in front of them. The command takes the class name, an optional distance in front, and an optional verbosity flag.
+-- @usage Spawn <ClassName> [distInFront] [verbose]
 RegisterConsoleCommandHandler("Spawn", function(fullCommand, args, _)
     print("[PingouinMod] Command Spawn activated\n")
-    if #args < 1 then print("[PingouinMod] ERROR: No class name provided. Usage: Spawn <ClassName checkColAtSpawn verbose>\n") return false end
-    local verbose
-    if #args > 1 then verbose = GB_StrToBool[args[3]] end
-
+    if #args < 1 then print("[PingouinMod] ERROR: No class name provided. Usage: Spawn <ClassName distInFront verbose>\n") return false end
 
     -- Handle short naming if needed
     local className = ShortNaming.HandleShortNaming(args[1])
     if className == nil then print(string.format("[PingouinMod] ERROR: Could not resolve class name for short name: %s\n", args[1])) return false end
+    
     local distInFront
-    if #args > 2 then distInFront = tonumber(args[2]) end
+    if #args > 1 then distInFront = tonumber(args[2]) end
+
+    local verbose
+    if #args > 2 then verbose = GB_StrToBool[args[3]] end
 
     ExecuteInGameThread(function()
         Spawner.SpawnActor(className, distInFront, verbose)

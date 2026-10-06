@@ -1,4 +1,6 @@
--- This part implements short naming for function calls
+--- ShortNamingUtils.lua is a system module that provides functions for handling short naming conventions in Unreal Engine. It allows for the resolution of short names to full asset paths, caching of these mappings, and loading from configuration files.
+-- @author PingouinTheDev
+
 local ShortNaming = {}
 
 local INIPATH = SCRIPT_DIR .. "config.ini"
@@ -29,7 +31,7 @@ local probableBlueprintPaths = {
     "/Game/Wildfire/Blueprints/Core/Connectors/",
 }
 
--- Caches a short name and its corresponding asset path in the short naming map and saves it to the config file.
+--- Caches a short name and its corresponding asset path in the short naming map and saves it to the config file.
 -- @param shortName (string) The short name to cache.
 -- @param assetPath (string) The full asset path corresponding to the short name.
 -- @return (string) The asset path that was cached.

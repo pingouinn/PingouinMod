@@ -1,5 +1,8 @@
+--- Title.lua provides a wrapper for creating and managing title components in Unreal Engine's NativeUI system. It includes methods for setting title text, applying styles, and refreshing the native widget.
+-- @author PingouinTheDev
+
 local Core = require("code/NativeUI/Core")
-local Config = require("code/NativeUI/Config")
+local Constants = require("code/Constants")
 local TextUtils = require("code/NativeUI/Components/Text/TextUtils")
 
 local TitleComponent = {}
@@ -9,7 +12,7 @@ local TitleClass = nil
 -- @return (UClass|nil) The title widget class.
 local function GetClass()
     if not Utils.IsValidObject(TitleClass) then
-        TitleClass = StaticFindObject(Config.Paths.titleClass)
+        TitleClass = StaticFindObject(Constants.NativeUI.Paths.TITLE_CLASS)
     end
     return TitleClass
 end
@@ -27,7 +30,7 @@ function TitleComponent.Create(initialText, stylePath)
     local instance = Core.UMG_Lib:Create(playerController, widgetClass, playerController)
     if not Utils.IsValidObject(instance) then return nil end
 
-    Utils.TryCall("Show title widget", function() instance:SetVisibility(Config.Visibility.VISIBLE) end)
+    Utils.TryCall("Show title widget", function() instance:SetVisibility(Constants.NativeUI.Visibility.VISIBLE) end)
 
     local titleObject = {
         Widget = instance,

@@ -1,3 +1,6 @@
+--- Utils.lua is a utility module that aggregates various utility functions from different modules, including Types, Math, Entity, World, Path, and Player. It provides a single interface for accessing these utilities.
+-- @author PingouinTheDev
+
 local Types = require("code/utils/Types")
 local Math = require("code/utils/Math")
 local Entity = require("code/utils/Entity")

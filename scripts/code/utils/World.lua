@@ -1,3 +1,6 @@
+--- World.lua provides utility functions for interacting with the game world, including raycasting, surface detection, and actor placement. It handles various edge cases and ensures safe operations with Unreal Engine objects.
+-- @author PingouinTheDev
+
 local Constants = require("code/Constants")
 local Types = require("code/utils/Types")
 local Math = require("code/utils/Math")

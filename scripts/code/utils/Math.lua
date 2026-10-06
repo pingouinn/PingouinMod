@@ -1,3 +1,6 @@
+--- Math.lua provides utility functions for mathematical operations, including vector calculations and position adjustments in Unreal Engine. It includes methods to compute positions in front of a player, forward vectors, and location equality checks.
+-- @author PingouinTheDev
+
 local Types = require("code/utils/Types")
 local Math = {}
 

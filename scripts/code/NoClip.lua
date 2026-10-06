@@ -1,3 +1,6 @@
+--- NoClip.lua provides a function to toggle noclip mode for the local player's pawn, allowing it to move freely through the game world without collision or gravity. It also registers a keybind for toggling noclip mode.
+-- @author PingouinTheDev
+
 local NoClip = {}
 
 -- State Variables

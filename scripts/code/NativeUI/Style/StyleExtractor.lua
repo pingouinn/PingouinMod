@@ -1,3 +1,6 @@
+--- StyleExtractor.lua is a module that scans Unreal Engine's GUObjectArray to extract and cache style assets based on their categories. It provides functions to retrieve cached styles, scan for new styles, and dump the cached data to a file. The module is designed to work with BlueprintGeneratedClass assets located in the "/Game/UI/Styles/" directory.
+-- @author PingouinTheDev
+
 local StyleExtractor = {}
 
 StyleExtractor.CachedStyles = {}

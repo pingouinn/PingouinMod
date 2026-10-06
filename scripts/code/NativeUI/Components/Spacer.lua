@@ -1,5 +1,8 @@
+--- Spacer.lua provides a wrapper for creating and managing spacer components in Unreal Engine's NativeUI system. It includes methods for creating spacer widgets, which can be used to add empty space between other UI elements in a layout.
+-- @author PingouinTheDev
+
 local Core = require("code/NativeUI/Core")
-local Config = require("code/NativeUI/Config")
+local Constants = require("code/Constants")
 
 local Spacer = {}
 Spacer.__index = Spacer
@@ -10,7 +13,7 @@ local SpacerClass = nil
 -- @return (UClass|nil) The spacer class.
 local function GetClass()
     if not Utils.IsValidObject(SpacerClass) then
-        SpacerClass = StaticFindObject(Config.Paths.spacerClass)
+        SpacerClass = StaticFindObject(Constants.NativeUI.Paths.SPACER_CLASS)
     end
     return SpacerClass
 end

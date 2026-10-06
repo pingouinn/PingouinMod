@@ -1,3 +1,6 @@
+--- Path.lua provides utility functions for handling file paths, including sanitization and dynamic loading of UE4SS dump files. It ensures compatibility with different path formats and manages the loading of large Lua files by adjusting their scope.
+-- @author PingouinTheDev
+
 local Path = {}
 
 --- Corrects the path separators in a given path string.

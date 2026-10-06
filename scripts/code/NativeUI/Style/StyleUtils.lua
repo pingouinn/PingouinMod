@@ -1,3 +1,6 @@
+--- StyleUtils.lua provides utility functions for resolving style identifiers or asset paths to style UObject instances in Unreal Engine. It includes caching mechanisms for efficient repeated style resolution and integrates with the StyleExtractor module to retrieve cached style types based on categories.
+-- @author PingouinTheDev
+
 local StyleExtractor = require("code/NativeUI/Style/StyleExtractor")
 
 local StyleHelper = {}

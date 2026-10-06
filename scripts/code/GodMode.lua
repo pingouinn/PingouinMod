@@ -1,3 +1,6 @@
+--- GodMode.lua provides a function to toggle god mode for the local player, granting invincibility and other special abilities. It also registers a keybind and console command for toggling god mode.
+-- @author PingouinTheDev
+
 local GodMode = {}
 
 -- State variables

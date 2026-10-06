@@ -1,5 +1,8 @@
+--- Switch.lua provides a wrapper for creating and managing switch (toggle) components in Unreal Engine's NativeUI system. It includes methods for setting the checked state, applying styles, handling toggle events, and managing active switch instances.
+-- @author PingouinTheDev
+
 local Core = require("code/NativeUI/Core")
-local Config = require("code/NativeUI/Config")
+local Constants = require("code/Constants")
 local StyleHelper = require("code/NativeUI/Style/StyleUtils")
 
 local SwitchComponent = {}
@@ -11,7 +14,7 @@ local HookInstalled = false
 -- @return (UClass|nil) The switch widget class.
 local function GetClass()
     if not Utils.IsValidObject(SwitchClass) then
-        SwitchClass = StaticFindObject(Config.Paths.switchClass)
+        SwitchClass = StaticFindObject(Constants.NativeUI.Paths.SWITCH_CLASS)
     end
     return SwitchClass
 end
@@ -56,7 +59,7 @@ function SwitchComponent.Create(initialState, onToggle, stylePath)
     local instance = Core.UMG_Lib:Create(playerController, widgetClass, playerController)
     if not Utils.IsValidObject(instance) then return nil end
 
-    Utils.TryCall("Show switch widget", function() instance:SetVisibility(Config.Visibility.VISIBLE) end)
+    Utils.TryCall("Show switch widget", function() instance:SetVisibility(Constants.NativeUI.Visibility.VISIBLE) end)
     EnsureHook()
 
     local switchObject = {

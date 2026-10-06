@@ -1,5 +1,8 @@
+--- Row.lua provides a wrapper for creating and managing horizontal row containers in Unreal Engine's NativeUI system. It includes methods for adding widgets to the row, applying size constraints, and refreshing child components.
+-- @author PingouinTheDev
+
 local Core = require("code/NativeUI/Core")
-local Config = require("code/NativeUI/Config")
+local Constants = require("code/Constants")
 
 local Row = {}
 Row.__index = Row
@@ -11,7 +14,7 @@ local sizeBoxClass = nil
 -- @return (UClass|nil) The horizontal box class.
 local function GetClass()
     if not Utils.IsValidObject(horizontalBoxClass) then
-        horizontalBoxClass = StaticFindObject(Config.Paths.horizontalBoxClass)
+        horizontalBoxClass = StaticFindObject(Constants.NativeUI.Paths.HORIZONTAL_BOX_CLASS)
     end
     return horizontalBoxClass
 end
@@ -20,7 +23,7 @@ end
 -- @return (UClass|nil) The size box class.
 local function GetSizeBoxClass()
     if not Utils.IsValidObject(sizeBoxClass) then
-        sizeBoxClass = StaticFindObject(Config.Paths.sizeBoxClass)
+        sizeBoxClass = StaticFindObject(Constants.NativeUI.Paths.SIZE_BOX_CLASS)
     end
     return sizeBoxClass
 end
@@ -103,9 +106,9 @@ function Row:Add(widgetItem, fillRatio, padding, verticalAlignment, constraints)
 
     Utils.TryCall("Configure row slot", function()
         local isFill = fillRatio and fillRatio > 0
-        slot:SetSize({Value = isFill and fillRatio or 1.0, SizeRule = isFill and Config.Layout.SIZE_FILL or Config.Layout.SIZE_AUTO})
+        slot:SetSize({Value = isFill and fillRatio or 1.0, SizeRule = isFill and Constants.NativeUI.Layout.SIZE_FILL or Constants.NativeUI.Layout.SIZE_AUTO})
         if padding then slot:SetPadding(padding) end
-        slot:SetVerticalAlignment(verticalAlignment or Config.Layout.VERTICAL_CENTER)
+        slot:SetVerticalAlignment(verticalAlignment or Constants.NativeUI.Layout.VERTICAL_CENTER)
     end)
     table.insert(self.Children, widgetItem)
     return slot

@@ -1,3 +1,6 @@
+--- TextUtils.lua provides utility functions for managing text components in Unreal Engine's NativeUI system. It includes methods for applying styles and setting text on widgets.
+-- @author PingouinTheDev
+
 local StyleHelper = require("code/NativeUI/Style/StyleUtils")
 
 local TextUtils = {}

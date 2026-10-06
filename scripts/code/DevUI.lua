@@ -1,3 +1,6 @@
+--- DevUI.lua is a sandbox to test NativeUI components, including buttons, switches, sliders, and text inputs. It registers a keybind to toggle the dashboard visibility.
+-- @author PingouinTheDev
+
 local NativeUI = require("code/NativeUI/init")
 local Layout = NativeUI.Layout
 

@@ -1,3 +1,6 @@
+--- PlayerCheat.lua provides a function to toggle cheat mode for the local player, granting or removing special abilities such as god mode, increased jump count, and enhanced movement capabilities. It also registers a keybind and console command for toggling cheat mode.
+-- @author PingouinTheDev
+
 local PlayerCheat = {}
 
 -- State variables

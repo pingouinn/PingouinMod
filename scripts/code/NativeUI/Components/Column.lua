@@ -1,5 +1,8 @@
+--- Column.lua provides a wrapper for creating and managing vertical column containers in Unreal Engine's NativeUI system. It includes methods for adding widgets to the column, applying size constraints, and refreshing child components.
+-- @author PingouinTheDev
+
 local Core = require("code/NativeUI/Core")
-local Config = require("code/NativeUI/Config")
+local Constants = require("code/Constants")
 
 local Column = {}
 Column.__index = Column
@@ -10,7 +13,7 @@ local verticalBoxClass = nil
 -- @return (UClass|nil) The vertical box class.
 local function GetClass()
     if not Utils.IsValidObject(verticalBoxClass) then
-        verticalBoxClass = StaticFindObject(Config.Paths.verticalBoxClass)
+        verticalBoxClass = StaticFindObject(Constants.NativeUI.Paths.VERTICAL_BOX_CLASS)
     end
     return verticalBoxClass
 end
@@ -55,9 +58,9 @@ function Column:Add(widgetItem, fillRatio, padding)
 
     Utils.TryCall("Configure column slot", function()
         local isFill = fillRatio and fillRatio > 0
-        slot:SetSize({Value = isFill and fillRatio or 1.0, SizeRule = isFill and Config.Layout.SIZE_FILL or Config.Layout.SIZE_AUTO})
+        slot:SetSize({Value = isFill and fillRatio or 1.0, SizeRule = isFill and Constants.NativeUI.Layout.SIZE_FILL or Constants.NativeUI.Layout.SIZE_AUTO})
         slot:SetPadding(padding or {Left = 0.0, Top = 4.0, Right = 0.0, Bottom = 4.0})
-        slot:SetHorizontalAlignment(Config.Layout.HORIZONTAL_FILL)
+        slot:SetHorizontalAlignment(Constants.NativeUI.Layout.HORIZONTAL_FILL)
     end)
     table.insert(self.Children, widgetItem)
     return slot

@@ -1,5 +1,8 @@
+--- Window.lua is a module that provides functionality for creating and managing NativeUI windows in Unreal Engine. It allows for the creation of windows with customizable headers and bodies, background blur effects, and input handling. The module includes methods for adding widgets to the window, showing and hiding the window, and managing its visibility and input modes.
+-- @author PingouinTheDev
+
 local Core = require("code/NativeUI/Core")
-local Config = require("code/NativeUI/Config")
+local Constants = require("code/Constants")
 
 local Window = {}
 Window.__index = Window
@@ -11,7 +14,7 @@ local sizeBoxClass = nil
 -- @return (UClass|nil) The background widget class.
 local function GetBackgroundClass()
     if not Utils.IsValidObject(backgroundClass) then
-        backgroundClass = StaticFindObject(Config.Paths.backgroundClass)
+        backgroundClass = StaticFindObject(Constants.NativeUI.Paths.BACKGROUND_CLASS)
     end
     return backgroundClass
 end
@@ -20,7 +23,7 @@ end
 -- @return (UClass|nil) The size box class.
 local function GetSizeBoxClass()
     if not Utils.IsValidObject(sizeBoxClass) then
-        sizeBoxClass = StaticFindObject(Config.Paths.sizeBoxClass)
+        sizeBoxClass = StaticFindObject(Constants.NativeUI.Paths.SIZE_BOX_CLASS)
     end
     return sizeBoxClass
 end
@@ -131,7 +134,7 @@ function Window.New(config)
     end
 
     -- Create the native vertical body container.
-    local bodyClass = StaticFindObject(Config.Paths.verticalBoxClass)
+    local bodyClass = StaticFindObject(Constants.NativeUI.Paths.VERTICAL_BOX_CLASS)
     local bodyBox = nil
 
     if Utils.IsValidObject(bodyClass) then
@@ -174,8 +177,8 @@ function Window:AddHeaderWidget(component, padding, verticalAlignment)
     Utils.TryCall("Add widget to window header", function()
         local slot = self.HBox:AddChildToHorizontalBox(rawWidget)
         if slot then
-            slot:SetSize({ Value = 1.0, SizeRule = Config.Layout.SIZE_FILL })
-            slot:SetVerticalAlignment(verticalAlignment or Config.Layout.VERTICAL_CENTER)
+            slot:SetSize({ Value = 1.0, SizeRule = Constants.NativeUI.Layout.SIZE_FILL })
+            slot:SetVerticalAlignment(verticalAlignment or Constants.NativeUI.Layout.VERTICAL_CENTER)
             if padding then
                 slot:SetPadding(padding)
             end
@@ -206,9 +209,9 @@ function Window:AddBodyWidget(widgetItem, constraints)
             end
 
             if constraints.fill and constraints.fill > 0 then
-                slot:SetSize({ Value = constraints.fill, SizeRule = Config.Layout.SIZE_FILL })
+                slot:SetSize({ Value = constraints.fill, SizeRule = Constants.NativeUI.Layout.SIZE_FILL })
             else
-                slot:SetSize({ Value = 1.0, SizeRule = Config.Layout.SIZE_AUTO })
+                slot:SetSize({ Value = 1.0, SizeRule = Constants.NativeUI.Layout.SIZE_AUTO })
             end
         end
     end)
@@ -229,7 +232,7 @@ function Window:SetBlurStrength(strength)
         else
             blur.BlurStrength = val
         end
-        blur:SetVisibility(val <= 0.0 and Config.Visibility.HIDDEN or Config.Visibility.VISIBLE)
+        blur:SetVisibility(val <= 0.0 and Constants.NativeUI.Visibility.HIDDEN or Constants.NativeUI.Visibility.VISIBLE)
     end)
 end
 
@@ -269,7 +272,7 @@ function Window:Show()
                 Core.UMG_Lib:SetInputMode_GameAndUIEx(
                     playerController,
                     self.RootWidget,
-                    Config.Input.MOUSE_LOCK_DO_NOT_LOCK,
+                    Constants.NativeUI.Input.MOUSE_LOCK_DO_NOT_LOCK,
                     false,
                     false
                 )

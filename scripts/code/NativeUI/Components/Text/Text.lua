@@ -1,5 +1,8 @@
+--- Text.lua provides a wrapper for creating and managing text components in Unreal Engine's NativeUI system. It includes methods for setting text, applying styles, and refreshing the native widget.
+-- @author PingouinTheDev
+
 local Core = require("code/NativeUI/Core")
-local Config = require("code/NativeUI/Config")
+local Constants = require("code/Constants")
 local TextUtils = require("code/NativeUI/Components/Text/TextUtils")
 
 local TextComponent = {}
@@ -9,7 +12,7 @@ local TextClass = nil
 -- @return (UClass|nil) The text widget class.
 local function GetClass()
     if not Utils.IsValidObject(TextClass) then
-        TextClass = StaticFindObject(Config.Paths.textClass)
+        TextClass = StaticFindObject(Constants.NativeUI.Paths.TEXT_CLASS)
     end
     return TextClass
 end
@@ -28,10 +31,10 @@ function TextComponent.Create(initialText, stylePath, showLine)
     local instance = Core.UMG_Lib:Create(playerController, widgetClass, playerController)
     if not Utils.IsValidObject(instance) then return nil end
 
-    Utils.TryCall("Show text widget", function() instance:SetVisibility(Config.Visibility.VISIBLE) end)
+    Utils.TryCall("Show text widget", function() instance:SetVisibility(Constants.NativeUI.Visibility.VISIBLE) end)
     Utils.TryCall("Set text line visibility", function()
         if Utils.IsValidObject(instance.IMG_Fade) then
-            instance.IMG_Fade:SetVisibility(showLine and Config.Visibility.VISIBLE or Config.Visibility.HIDDEN)
+            instance.IMG_Fade:SetVisibility(showLine and Constants.NativeUI.Visibility.VISIBLE or Constants.NativeUI.Visibility.HIDDEN)
         end
     end)
 

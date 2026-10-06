@@ -1,3 +1,6 @@
+--- Player.lua provides utility functions for interacting with the player controller and pawn in Unreal Engine. It includes methods to retrieve the local player, check for debug camera controllers, and manage cheat managers.
+-- @author PingouinTheDev
+
 local Types = require("code/utils/Types")
 local Player = {}
 
@@ -31,8 +34,8 @@ function Player.GetDebugCameraController()
 end
 
 --- Enables the cheat manager for a given player controller, constructing it if necessary.
---- @param playerController (UPlayerController) The player controller to enable the cheat manager for
---- @return (boolean) True if the cheat manager is enabled or already present, false otherwise
+-- @param playerController (UPlayerController) The player controller to enable the cheat manager for
+-- @return (boolean) True if the cheat manager is enabled or already present, false otherwise
 function Player.EnableCheatManager(playerController)
     if not Types.IsValidObject(playerController) then return false end
     if not Types.IsValidObject(playerController.CheatManager) then

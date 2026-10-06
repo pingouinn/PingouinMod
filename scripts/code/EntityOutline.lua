@@ -1,9 +1,12 @@
+--- EntityOutline.lua provides functions to add and remove outline effects on entities by enabling or disabling custom depth rendering on their components. It also manages a table of outlined entities and registers a keybind for toggling outlines on the entity under the player's crosshair.
+-- @author PingouinTheDev
+
 EntityOutline = {}
 
 EntityOutline.OutlinedEntities = {}
 local Spawner = require("code/Spawner")
 
--- Checks if an error message indicates an unsupported custom depth error.
+--- Checks if an error message indicates an unsupported custom depth error.
 -- @param errorMessage (string) The error message to check
 -- @return (boolean) True if the error message indicates an unsupported custom depth error, false otherwise
 local function IsUnsupportedCustomDepthError(errorMessage)
@@ -180,13 +183,13 @@ function EntityOutline.ToggleRaycastedEntityOutline(stencilValue)
     EntityOutline.AddEntityOutline(entity, stencilValue or 0, key)
 end
 
--- Returns the table of currently outlined entities.
+--- Returns the table of currently outlined entities.
 -- @return (table) A table containing the currently outlined entities, indexed by their unique keys
 function EntityOutline.GetOutlinedEntities()
     return EntityOutline.OutlinedEntities
 end
 
--- Clears all outlines from entities and resets the outlined entities table.
+--- Clears all outlines from entities and resets the outlined entities table.
 function EntityOutline.ClearAllOutlines()
     for key, entity in pairs(EntityOutline.OutlinedEntities) do
         if Utils.IsValidObject(entity) then

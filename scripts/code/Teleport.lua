@@ -1,7 +1,9 @@
+--- Teleport.lua provides a function to teleport the local player's pawn to a specified position and rotation, with optional offset and verbose output. It also registers a console command "tp" for manual teleportation.
+-- @author PingouinTheDev
+
 local Teleport = {}
 
---- Teleports a pawn to an absolute or relative position and optionally rotates it.
--- Position and rotation accept either named components or numeric components.
+--- Teleports a pawn to an absolute or relative position and optionally rotates it. Position and rotation accept either named components or numeric components.
 -- @param posTable (table) Target position: {X, Y, Z} or {1, 2, 3}
 -- @param isOffset (boolean|nil) Add the position to the pawn's current location
 -- @param rotTable (table|nil) Target rotation: {Pitch, Yaw, Roll} or numeric components

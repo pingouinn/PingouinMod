@@ -1,4 +1,5 @@
--- This module provides periodic execution of registered GC functions.
+--- GcScheduler.lua is a system module that manages the scheduling and execution of garbage collection functions in a Lua environment. It allows for the registration of functions to be executed at specified intervals, with optional staggering to avoid simultaneous execution. The module provides methods to register, unregister, and update the scheduled functions, ensuring efficient memory management in applications.
+-- @author PingouinTheDev
 
 local Types = require("code/utils/Types")
 local GCScheduler = {}
@@ -17,7 +18,7 @@ function GCScheduler.RegisterGC(gcFunction, interval, stagger)
     })
 end
 
--- Unregister a previously registered garbage collection function.
+--- Unregister a previously registered garbage collection function.
 -- @param gcFunction (function) The function to be unregistered.
 function GCScheduler.UnregisterGC(gcFunction)
     for i = #GCScheduler.gcFunctions, 1, -1 do

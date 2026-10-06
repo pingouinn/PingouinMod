@@ -1,5 +1,8 @@
+--- Core.lua is a module that provides core functionality for the NativeUI system in Unreal Engine. It manages the initialization of required libraries, registration of button click handlers, and handling of focusable input widgets. The module maintains global state to ensure consistent behavior across reloads and provides utility functions for committing focused inputs and checking input focus status.
+-- @author PingouinTheDev
+
 local Core = {}
-local Config = require("code/NativeUI/Config")
+local Constants = require("code/Constants")
 
 -- Global state for the NativeUI core
 local state = rawget(_G, "__PingouinNativeUICoreState")
@@ -22,7 +25,7 @@ Core.LastFocusedInput = nil
 -- @return (boolean) True when both required libraries are available.
 function Core.Init()
     if not Utils.IsValidObject(state.umgLib) then
-        state.umgLib = StaticFindObject(Config.Paths.widgetLibrary)
+        state.umgLib = StaticFindObject(Constants.NativeUI.Paths.WIDGET_LIBRARY)
     end
     Core.UMG_Lib = state.umgLib
     return Utils.IsValidObject(Core.UMG_Lib)
@@ -36,8 +39,8 @@ function Core.RegisterButtonClickHandler(handlerKey, handler)
     if type(handlerKey) ~= "string" or type(handler) ~= "function" then return false end
     state.buttonClickHandlers[handlerKey] = handler
 
-    if not state.buttonClickHookInstalled and StaticFindObject(Config.Paths.buttonClickFunction) then
-        RegisterHook(Config.Paths.buttonClickFunction, function(context)
+    if not state.buttonClickHookInstalled and StaticFindObject(Constants.NativeUI.Paths.BUTTON_CLICK_FUNCTION) then
+        RegisterHook(Constants.NativeUI.Paths.BUTTON_CLICK_FUNCTION, function(context)
             local clickedWidget = context:get()
             if not Utils.IsValidObject(clickedWidget) then return end
             for _, callback in pairs(state.buttonClickHandlers) do

@@ -1,11 +1,13 @@
+--- DisableWorldBoundaries.lua provides a function to disable world boundaries by deactivating collision on all BlockingVolume actors and deleting specific actors that enforce world boundaries. It also registers a keybind for disabling world boundaries.
+-- @author PingouinTheDev
+
 WorldBoundaries = {}
 
 local BOUNDARY_ACTOR_CLASSES = {
     "BP_PCGSplineFence_C", -- TODO : This deletes all the fences, maybe we can add a way to check only for the blocking ones
 }
 
---- Disables all BlockingVolume actors in the world to remove world boundaries.
---- Also deletes specific actors that are known to enforce world boundaries, such as "BP_PCGSplineFence_C".
+--- Disables all BlockingVolume actors in the world to remove world boundaries. Also deletes specific actors that are known to enforce world boundaries, such as "BP_PCGSplineFence_C".
 function WorldBoundaries.DisableAllBlockingVolumes()
     ExecuteInGameThread(function()
         local volumes = FindAllOf("BlockingVolume")

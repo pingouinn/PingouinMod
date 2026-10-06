@@ -1,3 +1,6 @@
+--- EntitySelector.lua provides functions to select and deselect entities in the game world, manage multiple selections, and perform raycasting to toggle selection of entities under the player's crosshair. It also registers a keybind for selecting entities.
+-- @author PingouinTheDev
+
 EntitySelector = {}
 
 EntitySelector.SelectedEntities = {}
@@ -6,7 +9,7 @@ EntitySelector.MultipleSelectionAuthorised = true
 -- TODO : No purpose yet, will serve as a mass move/teleport function in the future when UI is implemented.
 -- TODO : Add comportment for when multiple selection is not authorised, i.e. deselect all other entities when a new one is selected.
 
----- Selects an entity and adds it to the selection. If the entity is already selected, this function does nothing.
+--- Selects an entity and adds it to the selection. If the entity is already selected, this function does nothing.
 -- @param entity (AActor) The entity to select
 function EntitySelector.SelectEntity(entity)
     if not Utils.IsValidObject(entity) then
@@ -90,13 +93,13 @@ function EntitySelector.IsEntitySelected(entity)
     return EntitySelector.SelectedEntities[entityKey] ~= nil
 end
 
--- Returns the table of currently selected entities.
+--- Returns the table of currently selected entities.
 -- @return (table) A table containing the currently selected entities, indexed by their unique keys
 function EntitySelector.GetSelectedEntities()
     return EntitySelector.SelectedEntities
 end
 
--- Clears all selected entities from the table.
+--- Clears all selected entities from the table.
 function EntitySelector.ClearSelectedEntities()
     for key, entity in pairs(EntitySelector.SelectedEntities) do
         EntitySelector.SelectedEntities[key] = nil

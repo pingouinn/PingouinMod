@@ -1,3 +1,6 @@
+--- CollisionDeactivator.lua provides a function to toggle the collision of the element in front of the player. It performs a raycast to detect the entity and attempts to disable its collision, handling both actors and components.
+-- @author PingouinTheDev
+
 CollisionDeactivator = {}
 
 -- TODO : When collision deactivated, the entity should be added to a list of entities with disabled collision

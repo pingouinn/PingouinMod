@@ -1,3 +1,6 @@
+--- Types.lua provides utility functions for working with different data types in the context of Unreal Engine development.
+-- @author PingouinTheDev
+
 local Types = {}
 local textLibrary = nil
 local unpackValues = table.unpack or unpack

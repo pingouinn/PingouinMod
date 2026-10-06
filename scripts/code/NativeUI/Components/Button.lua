@@ -1,5 +1,8 @@
+--- Button.lua provides a wrapper for creating and managing button components in Unreal Engine's NativeUI system. It includes methods for setting button text, applying styles, handling click events, and managing active button instances.
+-- @author PingouinTheDev
+
 local Core = require("code/NativeUI/Core")
-local Config = require("code/NativeUI/Config")
+local Constants = require("code/Constants")
 local StyleHelper = require("code/NativeUI/Style/StyleUtils")
 
 local ButtonComponent = {}
@@ -11,7 +14,7 @@ local HookInstalled = false
 -- @return (UClass|nil) The button widget class.
 local function GetClass()
     if not Utils.IsValidObject(ButtonClass) then
-        ButtonClass = StaticFindObject(Config.Paths.buttonClass)
+        ButtonClass = StaticFindObject(Constants.NativeUI.Paths.BUTTON_CLASS)
     end
     return ButtonClass
 end
@@ -70,7 +73,7 @@ function ButtonComponent.Create(initialText, onClick, stylePath)
     local instance = Core.UMG_Lib:Create(playerController, widgetClass, playerController)
     if not Utils.IsValidObject(instance) then return nil end
 
-    Utils.TryCall("Show button widget", function() instance:SetVisibility(Config.Visibility.VISIBLE) end)
+    Utils.TryCall("Show button widget", function() instance:SetVisibility(Constants.NativeUI.Visibility.VISIBLE) end)
     instance.bIsFocusable = true
     EnsureHook()
 
