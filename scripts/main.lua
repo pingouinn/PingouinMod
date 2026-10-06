@@ -67,12 +67,23 @@ DevUI = require("code/DevUI")
 -- UI
 NativeUI = require("code/NativeUI/init")
 
+if DEBUG_MODE then
+	-- Load test commands after their NativeUI and scheduler dependencies are initialized.
+	local testFolderPath = MOD_FOLDER .. "/PingouinMod/scripts/tests/TestInit.lua"
+	print("[PingouinMod] Test folder path: " .. testFolderPath .. "\n")
+	if Utils.DoesFileExist(testFolderPath) then
+		require("tests/TestInit")
+	else
+		print("[PingouinMod] Test folder not found, skipping test commands\n")
+	end
+end
+
 WildFire = Utils.RequireUE4SSDump(MOD_FOLDER .. "/shared/types/Wildfire.lua")
 if WildFire == nil then print("[PingouinMod] ERROR: Failed to load Wildfire UE4SS dump\n") end
 
 -- We register the mod in the global PingouinMod table to make it accessible from other scripts and for documentation purposes.
 PingouinMod = {
-    UI = require("code/NativeUI/init"),
+    UI = NativeUI,
     Utils = {
         Entity = require("code/utils/Entity"),
         Math   = require("code/utils/Math"),
@@ -82,21 +93,21 @@ PingouinMod = {
 		World = require("code/utils/World"),
     },
     System = {
-        GC = require("code/system/GcScheduler"),
-		ShortNaming = require("code/system/ShortNamingUtils"),
+        GC = GCScheduler,
+		ShortNaming = ShortNaming,
     },
-	BarrierOpener = require("code/BarrierOpener"),
-	CollisionDeactivator = require("code/CollisionDeactivator"),
-	Constants = require("code/Constants"),
-	DevUI = require("code/DevUI"),
-	DisableWorldBoundaries = require("code/DisableWorldBoundaries"),
-	EntityOutline = require("code/EntityOutline"),
-	EntitySelector = require("code/EntitySelector"),
-	GodMode = require("code/GodMode"),
-	NoClip = require("code/NoClip"),
-	PlayerCheat = require("code/PlayerCheat"),
-	Spawner = require("code/Spawner"),
-	Teleport = require("code/Teleport"),
+	BarrierOpener = BarrierOpener,
+	CollisionDeactivator = CollisionDeactivator,
+	Constants = Constants,
+	DevUI = DevUI,
+	DisableWorldBoundaries = DisableWorldBoundaries,
+	EntityOutline = EntityOutline,
+	EntitySelector = EntitySelector,
+	GodMode = GodMode,
+	NoClip = NoClip,
+	PlayerCheat = PlayerCheat,
+	Spawner = Spawner,
+	Teleport = Teleport,
 
     Version = "0.1.7",
 }
