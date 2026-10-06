@@ -18,6 +18,14 @@ function Path.GetModFolder(scriptFullPath)
     return scriptFullPath:match("^(.*)/PingouinMod/") or ""
 end
 
+--- Checks if a file exists at the given path.
+-- @param name (string) The path to the file
+-- @return (boolean) True if the file exists, false otherwise
+function Path.DoesFileExist(name)
+   local f=io.open(name,"r")
+   if f~=nil then io.close(f) return true else return false end
+end
+
 --- Dynamically requires a UE4SS dump file, patching it to use global variables, because it overlaps the 200 local limit.
 -- @param filePath (string) The file path to the UE4SS dump Lua file
 -- @return (table) The environment table containing the dumped variables, or nil and an error
