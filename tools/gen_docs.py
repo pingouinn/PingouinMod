@@ -4,7 +4,8 @@ from pathlib import Path
 
 # Source directory containing Lua scripts
 LUA_DIR = Path("scripts/code")
-OUTPUT_FILE = Path("API.md")
+DOCS_DIR = Path("docs")
+OUTPUT_FILE = DOCS_DIR / "index.md"
 
 # Parsing REGEX patterns for Lua documentation comments
 FUNC_REGEX = re.compile(
@@ -22,15 +23,17 @@ RETURN_REGEX = re.compile(
     r"^--+[\s*]*@return\s*(?:\((.*?)\)|(\S+))?\s*(.*)$"
 )
 
-
 def clean_pipes(text: str) -> str:
-    return (text or "").replace("|", "\\|")
+    return (text or "").replace("|", "\\|").strip()
 
+def slugify(text: str) -> str:
+    text = text.lower()
+    text = re.sub(r"[^\w\s-]", "", text)
+    return re.sub(r"[-\s]+", "-", text).strip("-")
 
 def parse_lua_file(filepath: Path):
     classes = []
     functions = []
-
     current_class = None
     current_doc = {"desc": [], "params": [], "returns": []}
     last_target = None
@@ -40,6 +43,11 @@ def parse_lua_file(filepath: Path):
             stripped = line.strip()
 
             if stripped.startswith("--"):
+
+                # Supress todo comments
+                if "TODO" in stripped:
+                    continue
+
                 # @class detection
                 m_class = CLASS_REGEX.match(stripped)
                 if m_class:
@@ -142,28 +150,41 @@ def parse_lua_file(filepath: Path):
 
     return {"classes": classes, "functions": functions}
 
-
 def main():
     if not LUA_DIR.exists():
-        print(f"ERROR : Directory {LUA_DIR} does not exist.")
         return
+
+    DOCS_DIR.mkdir(parents=True, exist_ok=True)
 
     modules = {}
     for root, _, files in os.walk(LUA_DIR):
         for file in sorted(files):
             if file.endswith(".lua"):
                 path = Path(root) / file
-                rel_path = path.relative_to(LUA_DIR)
+                rel_path = path.relative_to(LUA_DIR).as_posix()
                 data = parse_lua_file(path)
                 if data["classes"] or data["functions"]:
-                    modules[str(rel_path)] = data
+                    modules[rel_path] = data
 
-    output = ["# PingouinMod Documentation\n"]
+    output = ["# PingouinMod API Documentation\n"]
+
+    output.append("## Table of Contents\n")
+    categories = {}
+    for mod_path in sorted(modules.keys()):
+        parts = mod_path.split("/")
+        category = parts[0] if len(parts) > 1 else "Core Features"
+        categories.setdefault(category, []).append(mod_path)
+
+    for cat, mods in categories.items():
+        output.append(f"- **{cat}**")
+        for m in mods:
+            anchor = slugify(f"module-{m}")
+            output.append(f"  - [{m}](#{anchor})")
+    output.append("\n---\n")
 
     for mod_path, data in sorted(modules.items()):
         output.append(f"## Module `{mod_path}`\n")
 
-        # Class/Enum/Types render
         if data["classes"]:
             for cls in data["classes"]:
                 output.append(f"### Struct / Class `{cls['name']}`\n")
@@ -173,14 +194,12 @@ def main():
                     output.append("| Field | Type | Description |")
                     output.append("| :--- | :--- | :--- |")
                     for f in cls["fields"]:
-                        c_name = clean_pipes(f["name"])
-                        c_type = clean_pipes(f["type"])
-                        c_desc = clean_pipes(f["desc"])
-                        output.append(f"| `{c_name}` | `{c_type}` | {c_desc} |")
+                        output.append(
+                            f"| `{clean_pipes(f['name'])}` | `{clean_pipes(f['type'])}` | {clean_pipes(f['desc'])} |"
+                        )
                     output.append("")
                 output.append("---\n")
 
-        # Functions render
         if data["functions"]:
             for fn in data["functions"]:
                 sig = f"{fn['name']}({', '.join(fn['args'])})"
@@ -194,10 +213,9 @@ def main():
                     output.append("| Name | Type | Description |")
                     output.append("| :--- | :--- | :--- |")
                     for p in fn["params"]:
-                        p_name = clean_pipes(p["name"])
-                        p_type = clean_pipes(p["type"])
-                        p_desc = clean_pipes(p["desc"])
-                        output.append(f"| `{p_name}` | `{p_type}` | {p_desc} |")
+                        output.append(
+                            f"| `{clean_pipes(p['name'])}` | `{clean_pipes(p['type'])}` | {clean_pipes(p['desc'])} |"
+                        )
                     output.append("")
 
                 if fn["returns"]:
@@ -205,16 +223,13 @@ def main():
                     for r in fn["returns"]:
                         r_type = clean_pipes(r["type"])
                         r_desc = clean_pipes(r["desc"])
-                        output.append(f"- `{r_type}` : {r_desc}")
+                        output.append(f"- `{r_type}`" + (f" : {r_desc}" if r_desc else ""))
                     output.append("")
 
                 output.append("---\n")
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         f.write("\n".join(output))
-
-    print(f"Docs generated successfully in {OUTPUT_FILE}")
-
 
 if __name__ == "__main__":
     main()
