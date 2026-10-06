@@ -129,8 +129,10 @@ RegisterKeyBind(Key.I, function()
     if not NativeUI.IsAnyInputFocused() then
         if not Dashboard then
             BuildDashboard()
-        end
-        if Dashboard then
+            if Dashboard then
+                Dashboard:Show()
+            end
+        else
             Dashboard:Toggle()
         end
     end
