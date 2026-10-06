@@ -21,3 +21,51 @@
 .md-typeset a:hover {
   color: #fb7185;
 }
+
+.md-typeset h3 {
+  margin-top: 2.5rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+
+.md-typeset h3 + .highlight {
+  margin-top: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.md-typeset table:not([class]) {
+  width: 100%;
+  display: table;
+  margin-bottom: 1.5rem;
+}
+
+.md-typeset table td code {
+  white-space: nowrap !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  display: inline !important;
+}
+
+.md-typeset table th:nth-child(1),
+.md-typeset table td:nth-child(1) {
+  width: 25%;
+  min-width: 150px;
+}
+
+.md-typeset table th:nth-child(2),
+.md-typeset table td:nth-child(2) {
+  width: 20%;
+  min-width: 120px;
+}
+
+.md-typeset table th:nth-child(3),
+.md-typeset table td:nth-child(3) {
+  width: 55%;
+}
+
+.md-typeset h3 em {
+  font-size: 0.8em;
+  color: var(--md-default-fg-color--lighter);
+  font-style: normal;
+}

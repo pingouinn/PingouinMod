@@ -8,7 +8,6 @@ LUA_DIR = Path("scripts/code")
 DOCS_DIR = Path("docs")
 
 # Parsing REGEX patterns for Lua documentation comments
-# Groupe 1 capture "local " s'il existe
 FUNC_REGEX = re.compile(
     r"^(local\s+)?function\s+([a-zA-Z0-9_.:]+)\s*\((.*?)\)|"
     r"^([a-zA-Z0-9_.:]+)\s*=\s*function\s*\((.*?)\)"
@@ -27,6 +26,13 @@ SEE_REGEX = re.compile(
     r"^--+[\s*]*@see\s+(\S+)(?:\s+(.*))?$"
 )
 
+# Known targets mapping for automatic cross-linking in @see
+SEE_TARGET_LINKS = {
+    "NativeUIVisibilityConstants": "../Constants/#constantsnativeuivisibility",
+    "Constants.NativeUI.Visibility": "../Constants/#constantsnativeuivisibility",
+    "ESlateVisibility": "https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/UMG/Blueprint/ESlateVisibility",
+}
+
 
 def clean_table_pipes(text: str) -> str:
     """
@@ -39,6 +45,18 @@ def clean_table_pipes(text: str) -> str:
     for i in range(0, len(parts), 2):
         parts[i] = parts[i].replace("|", "\\|")
     return "`".join(parts).strip()
+
+
+def resolve_see_link(target: str, desc: str = "") -> str:
+    """Formats an @see target into a clickable link if known, or inline code otherwise."""
+    url = SEE_TARGET_LINKS.get(target)
+    label = f"`{target}`"
+    if url:
+        link_md = f"[{label}]({url})"
+    else:
+        link_md = label
+
+    return link_md + (f" ({desc})" if desc else "")
 
 
 def parse_lua_file(filepath: Path):
@@ -54,11 +72,9 @@ def parse_lua_file(filepath: Path):
             stripped = line.strip()
 
             if stripped.startswith("--"):
-                # Suppress TODO comments from public documentation
                 if "TODO" in stripped:
                     continue
 
-                # @class detection
                 m_class = CLASS_REGEX.match(stripped)
                 if m_class:
                     if current_class:
@@ -71,7 +87,6 @@ def parse_lua_file(filepath: Path):
                     last_target = None
                     continue
 
-                # @field detection (only if inside a class definition)
                 if current_class and "@field" in stripped:
                     m_field = FIELD_REGEX.match(stripped)
                     if m_field:
@@ -84,7 +99,6 @@ def parse_lua_file(filepath: Path):
                         last_target = field_obj
                     continue
 
-                # @param detection
                 if "@param" in stripped:
                     m_param = PARAM_REGEX.match(stripped)
                     if m_param:
@@ -98,7 +112,6 @@ def parse_lua_file(filepath: Path):
                         last_target = param_obj
                     continue
 
-                # @return detection
                 if "@return" in stripped:
                     m_ret = RETURN_REGEX.match(stripped)
                     if m_ret:
@@ -111,22 +124,17 @@ def parse_lua_file(filepath: Path):
                         last_target = ret_obj
                     continue
 
-                # @see detection
                 if "@see" in stripped:
                     m_see = SEE_REGEX.match(stripped)
                     if m_see:
-                        see_target = m_see.group(1).strip()
-                        see_desc = (m_see.group(2) or "").strip()
-                        current_doc["sees"].append(
-                            f"`{see_target}`" + (f" ({see_desc})" if see_desc else "")
-                        )
+                        target = m_see.group(1).strip()
+                        desc = (m_see.group(2) or "").strip()
+                        current_doc["sees"].append(resolve_see_link(target, desc))
                         last_target = None
                         continue
 
-                # Multiline description handling
                 text = re.sub(r"^--+[\s*]?", "", stripped).strip()
                 if text and not text.startswith("@author"):
-                    # Inline @see cleanup if placed on the same line as description
                     if "@see" in text:
                         parts = re.split(r"@see\s+", text, maxsplit=1)
                         if parts[0].strip():
@@ -138,9 +146,7 @@ def parse_lua_file(filepath: Path):
                             see_tokens = parts[1].strip().split(maxsplit=1)
                             target = see_tokens[0]
                             desc = see_tokens[1] if len(see_tokens) > 1 else ""
-                            current_doc["sees"].append(
-                                f"`{target}`" + (f" ({desc})" if desc else "")
-                            )
+                            current_doc["sees"].append(resolve_see_link(target, desc))
                         last_target = None
                         continue
 
@@ -151,11 +157,9 @@ def parse_lua_file(filepath: Path):
                         current_doc["desc"].append(text)
                 continue
 
-            # Tolerate empty lines between docblocks and definitions
             if not stripped:
                 continue
 
-            # Function declaration detection
             m_func = FUNC_REGEX.match(stripped)
             if m_func:
                 if (
@@ -185,7 +189,6 @@ def parse_lua_file(filepath: Path):
                 current_doc = {"desc": [], "params": [], "returns": [], "sees": []}
                 last_target = None
             else:
-                # Reset doc buffer when non-doc, non-function line is encountered
                 current_doc = {"desc": [], "params": [], "returns": [], "sees": []}
                 last_target = None
 
@@ -193,6 +196,51 @@ def parse_lua_file(filepath: Path):
         classes.append(current_class)
 
     return {"classes": classes, "functions": functions}
+
+
+def render_function_block(fn: dict) -> list[str]:
+    """Formats a single function documentation section."""
+    lines = []
+    # Short name for H3 so the right sidebar remains clean and readable
+    raw_name = fn["name"]
+    short_name = raw_name.split(":")[-1].split(".")[-1]
+    
+    badge = " *(internal)*" if fn.get("is_local") else ""
+    lines.append(f"### {short_name}{badge}\n")
+
+    # Full signature displayed as a code block immediately under the heading
+    sig = f"{fn['name']}({', '.join(fn['args'])})"
+    lines.append(f"```lua\n{sig}\n```\n")
+
+    if fn.get("is_local"):
+        lines.append("> ⚠️ **Internal function:** Not exported in the module's public API table.\n")
+
+    if fn["desc"]:
+        lines.append(f"{fn['desc']}\n")
+
+    if fn.get("sees"):
+        lines.append("**See also:** " + ", ".join(fn["sees"]) + "\n")
+
+    if fn["params"]:
+        lines.append("**Parameters:**\n")
+        lines.append("| Name | Type | Description |")
+        lines.append("| :--- | :--- | :--- |")
+        for p in fn["params"]:
+            lines.append(
+                f"| `{p['name']}` | `{p['type']}` | {clean_table_pipes(p['desc'])} |"
+            )
+        lines.append("")
+
+    if fn["returns"]:
+        lines.append("**Returns:**\n")
+        for r in fn["returns"]:
+            r_type = r["type"].strip()
+            r_desc = r["desc"].strip()
+            lines.append(f"- `{r_type}`" + (f" : {r_desc}" if r_desc else ""))
+        lines.append("")
+
+    lines.append("---\n")
+    return lines
 
 
 def generate_module_page(rel_path: str, data: dict) -> str:
@@ -217,44 +265,19 @@ def generate_module_page(rel_path: str, data: dict) -> str:
                 lines.append("")
             lines.append("---\n")
 
-    # Render Functions
-    if data["functions"]:
+    # Split functions into public and internal groups
+    public_funcs = [f for f in data["functions"] if not f.get("is_local")]
+    internal_funcs = [f for f in data["functions"] if f.get("is_local")]
+
+    if public_funcs:
         lines.append("## Functions\n")
-        for fn in data["functions"]:
-            sig = f"{fn['name']}({', '.join(fn['args'])})"
-            
-            # Badge ou libellé si la fonction est locale/interne
-            badge = " *(internal)*" if fn.get("is_local") else ""
-            lines.append(f"### `{sig}`{badge}\n")
+        for fn in public_funcs:
+            lines.extend(render_function_block(fn))
 
-            if fn.get("is_local"):
-                lines.append("> ⚠️ **Internal function:** Not exported in the module's public API table.\n")
-
-            if fn["desc"]:
-                lines.append(f"{fn['desc']}\n")
-
-            if fn.get("sees"):
-                lines.append("**See also:** " + ", ".join(fn["sees"]) + "\n")
-
-            if fn["params"]:
-                lines.append("**Parameters:**\n")
-                lines.append("| Name | Type | Description |")
-                lines.append("| :--- | :--- | :--- |")
-                for p in fn["params"]:
-                    lines.append(
-                        f"| `{p['name']}` | `{p['type']}` | {clean_table_pipes(p['desc'])} |"
-                    )
-                lines.append("")
-
-            if fn["returns"]:
-                lines.append("**Returns:**\n")
-                for r in fn["returns"]:
-                    r_type = r["type"].strip()
-                    r_desc = r["desc"].strip()
-                    lines.append(f"- `{r_type}`" + (f" : {r_desc}" if r_desc else ""))
-                lines.append("")
-
-            lines.append("---\n")
+    if internal_funcs:
+        lines.append("## Internal Functions\n")
+        for fn in internal_funcs:
+            lines.extend(render_function_block(fn))
 
     return "\n".join(lines)
 
@@ -264,7 +287,6 @@ def main():
         print(f"Error: {LUA_DIR} does not exist.")
         return
 
-    # Clean existing docs directory to avoid stale files
     PROTECTED_DIRS = {"assets", "stylesheets", "tools"}
 
     if DOCS_DIR.exists():
@@ -286,7 +308,6 @@ def main():
                 if data["classes"] or data["functions"]:
                     modules[rel_path] = data
 
-    # 1. Generate individual page for each module
     for rel_path, data in modules.items():
         doc_rel_path = Path(rel_path).with_suffix(".md")
         target_file = DOCS_DIR / doc_rel_path
@@ -296,7 +317,6 @@ def main():
         with open(target_file, "w", encoding="utf-8") as f:
             f.write(content)
 
-    # 2. Generate the index / landing page
     index_lines = [
         "# PingouinMod API Reference\n",
         "Welcome to the official documentation for the **PingouinMod** scripting framework.\n",
