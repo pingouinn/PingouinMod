@@ -1,0 +1,40 @@
+site_name: PingouinMod API
+site_description: Documentation de l'API PingouinMod
+site_url: https://pingouinn.github.io/PingouinMod/
+
+# Repository containing the .md files is the parent
+docs_dir: '..'
+
+theme:
+  name: material
+  logo: assets/logo.png
+  favicon: assets/logo.png
+  palette:
+    - scheme: slate
+      primary: deep purple
+      accent: pink
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: deep purple
+      accent: pink
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.indexes
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - tables
+  - pymdownx.highlight
+  - pymdownx.superfences

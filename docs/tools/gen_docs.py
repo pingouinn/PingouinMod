@@ -1,11 +1,11 @@
 import os
 import re
+import shutil
 from pathlib import Path
 
-# Source directory containing Lua scripts
+# Source directory containing Lua scripts and destination docs directory
 LUA_DIR = Path("scripts/code")
 DOCS_DIR = Path("docs")
-OUTPUT_FILE = DOCS_DIR / "index.md"
 
 # Parsing REGEX patterns for Lua documentation comments
 FUNC_REGEX = re.compile(
@@ -23,15 +23,14 @@ RETURN_REGEX = re.compile(
     r"^--+[\s*]*@return\s*(?:\((.*?)\)|(\S+))?\s*(.*)$"
 )
 
+
 def clean_pipes(text: str) -> str:
+    """Escapes Markdown pipes inside table cells."""
     return (text or "").replace("|", "\\|").strip()
 
-def slugify(text: str) -> str:
-    text = text.lower()
-    text = re.sub(r"[^\w\s-]", "", text)
-    return re.sub(r"[-\s]+", "-", text).strip("-")
 
 def parse_lua_file(filepath: Path):
+    """Parses a Lua file and extracts documented classes and functions."""
     classes = []
     functions = []
     current_class = None
@@ -43,8 +42,7 @@ def parse_lua_file(filepath: Path):
             stripped = line.strip()
 
             if stripped.startswith("--"):
-
-                # Supress todo comments
+                # Suppress TODO comments from public documentation
                 if "TODO" in stripped:
                     continue
 
@@ -61,7 +59,7 @@ def parse_lua_file(filepath: Path):
                     last_target = None
                     continue
 
-                # @field detection (only if inside a class)
+                # @field detection (only if inside a class definition)
                 if current_class and "@field" in stripped:
                     m_field = FIELD_REGEX.match(stripped)
                     if m_field:
@@ -101,7 +99,7 @@ def parse_lua_file(filepath: Path):
                         last_target = ret_obj
                     continue
 
-                # Multiline description handling (lines starting with -- but not @param/@return/@field)
+                # Multiline description handling
                 text = re.sub(r"^--+[\s*]?", "", stripped).strip()
                 if text and not text.startswith("@author"):
                     if last_target and not text.startswith("@"):
@@ -111,11 +109,11 @@ def parse_lua_file(filepath: Path):
                         current_doc["desc"].append(text)
                 continue
 
-            # We tolerate empty line between docblock and function
+            # Tolerate empty lines between docblocks and definitions
             if not stripped:
                 continue
 
-            # Function signature detection
+            # Function declaration detection
             m_func = FUNC_REGEX.match(stripped)
             if m_func:
                 if (
@@ -141,7 +139,7 @@ def parse_lua_file(filepath: Path):
                 current_doc = {"desc": [], "params": [], "returns": []}
                 last_target = None
             else:
-                # Resets the docs buffer if we encounter a non-doc, non-function line
+                # Reset doc buffer when non-doc, non-function line is encountered
                 current_doc = {"desc": [], "params": [], "returns": []}
                 last_target = None
 
@@ -150,11 +148,78 @@ def parse_lua_file(filepath: Path):
 
     return {"classes": classes, "functions": functions}
 
+
+def generate_module_page(rel_path: str, data: dict) -> str:
+    """Generates the Markdown content for a single module page."""
+    mod_name = Path(rel_path).stem
+    lines = [f"# `{mod_name}`\n", f"> Module file: `{rel_path}`\n\n---\n"]
+
+    # Render Classes and Structs
+    if data["classes"]:
+        lines.append("## Structures & Classes\n")
+        for cls in data["classes"]:
+            lines.append(f"### `{cls['name']}`\n")
+            if cls["desc"]:
+                lines.append(f"{cls['desc']}\n")
+            if cls["fields"]:
+                lines.append("| Field | Type | Description |")
+                lines.append("| :--- | :--- | :--- |")
+                for f in cls["fields"]:
+                    lines.append(
+                        f"| `{clean_pipes(f['name'])}` | `{clean_pipes(f['type'])}` | {clean_pipes(f['desc'])} |"
+                    )
+                lines.append("")
+            lines.append("---\n")
+
+    # Render Functions
+    if data["functions"]:
+        lines.append("## Functions\n")
+        for fn in data["functions"]:
+            sig = f"{fn['name']}({', '.join(fn['args'])})"
+            lines.append(f"### `{sig}`\n")
+
+            if fn["desc"]:
+                lines.append(f"{fn['desc']}\n")
+
+            if fn["params"]:
+                lines.append("**Parameters:**\n")
+                lines.append("| Name | Type | Description |")
+                lines.append("| :--- | :--- | :--- |")
+                for p in fn["params"]:
+                    lines.append(
+                        f"| `{clean_pipes(p['name'])}` | `{clean_pipes(p['type'])}` | {clean_pipes(p['desc'])} |"
+                    )
+                lines.append("")
+
+            if fn["returns"]:
+                lines.append("**Returns:**\n")
+                for r in fn["returns"]:
+                    r_type = clean_pipes(r["type"])
+                    r_desc = clean_pipes(r["desc"])
+                    lines.append(f"- `{r_type}`" + (f" : {r_desc}" if r_desc else ""))
+                lines.append("")
+
+            lines.append("---\n")
+
+    return "\n".join(lines)
+
+
 def main():
     if not LUA_DIR.exists():
+        print(f"Error: {LUA_DIR} does not exist.")
         return
 
-    DOCS_DIR.mkdir(parents=True, exist_ok=True)
+    # Clean existing docs directory to avoid stale files
+    PROTECTED_DIRS = {"assets", "stylesheets", "tools"}
+
+    if DOCS_DIR.exists():
+        for item in DOCS_DIR.iterdir():
+            if item.is_file() and item.suffix == ".md":
+                item.unlink()  # Supprime les anciens .md
+            elif item.is_dir() and item.name not in PROTECTED_DIRS:
+                shutil.rmtree(item)  # Supprime les anciens sous-dossiers générés (ex: NativeUI, utils)
+    else:
+        DOCS_DIR.mkdir(parents=True, exist_ok=True)
 
     modules = {}
     for root, _, files in os.walk(LUA_DIR):
@@ -166,70 +231,41 @@ def main():
                 if data["classes"] or data["functions"]:
                     modules[rel_path] = data
 
-    output = ["# PingouinMod API Documentation\n"]
+    # 1. Generate individual page for each module
+    for rel_path, data in modules.items():
+        doc_rel_path = Path(rel_path).with_suffix(".md")
+        target_file = DOCS_DIR / doc_rel_path
+        target_file.parent.mkdir(parents=True, exist_ok=True)
 
-    output.append("## Table of Contents\n")
+        content = generate_module_page(rel_path, data)
+        with open(target_file, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    # 2. Generate the index / landing page
+    index_lines = [
+        "# PingouinMod API Reference\n",
+        "Welcome to the official documentation for the **PingouinMod** scripting framework.\n",
+        "Select a module in the left sidebar or browse through the categories below:\n",
+    ]
+
     categories = {}
     for mod_path in sorted(modules.keys()):
         parts = mod_path.split("/")
-        category = parts[0] if len(parts) > 1 else "Core Features"
-        categories.setdefault(category, []).append(mod_path)
+        cat = parts[0] if len(parts) > 1 else "Core Features"
+        categories.setdefault(cat, []).append(mod_path)
 
     for cat, mods in categories.items():
-        output.append(f"- **{cat}**")
+        index_lines.append(f"### {cat}\n")
         for m in mods:
-            anchor = slugify(f"module-{m}")
-            output.append(f"  - [{m}](#{anchor})")
-    output.append("\n---\n")
+            target_link = Path(m).with_suffix("").as_posix()
+            index_lines.append(f"- [{m}]({target_link}/)")
+        index_lines.append("")
 
-    for mod_path, data in sorted(modules.items()):
-        output.append(f"## Module `{mod_path}`\n")
+    with open(DOCS_DIR / "index.md", "w", encoding="utf-8") as f:
+        f.write("\n".join(index_lines))
 
-        if data["classes"]:
-            for cls in data["classes"]:
-                output.append(f"### Struct / Class `{cls['name']}`\n")
-                if cls["desc"]:
-                    output.append(f"{cls['desc']}\n")
-                if cls["fields"]:
-                    output.append("| Field | Type | Description |")
-                    output.append("| :--- | :--- | :--- |")
-                    for f in cls["fields"]:
-                        output.append(
-                            f"| `{clean_pipes(f['name'])}` | `{clean_pipes(f['type'])}` | {clean_pipes(f['desc'])} |"
-                        )
-                    output.append("")
-                output.append("---\n")
+    print(f"Documentation successfully generated in {DOCS_DIR}/")
 
-        if data["functions"]:
-            for fn in data["functions"]:
-                sig = f"{fn['name']}({', '.join(fn['args'])})"
-                output.append(f"### Fonction `{sig}`\n")
-
-                if fn["desc"]:
-                    output.append(f"{fn['desc']}\n")
-
-                if fn["params"]:
-                    output.append("**Parameters :**\n")
-                    output.append("| Name | Type | Description |")
-                    output.append("| :--- | :--- | :--- |")
-                    for p in fn["params"]:
-                        output.append(
-                            f"| `{clean_pipes(p['name'])}` | `{clean_pipes(p['type'])}` | {clean_pipes(p['desc'])} |"
-                        )
-                    output.append("")
-
-                if fn["returns"]:
-                    output.append("**Returns :**\n")
-                    for r in fn["returns"]:
-                        r_type = clean_pipes(r["type"])
-                        r_desc = clean_pipes(r["desc"])
-                        output.append(f"- `{r_type}`" + (f" : {r_desc}" if r_desc else ""))
-                    output.append("")
-
-                output.append("---\n")
-
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        f.write("\n".join(output))
 
 if __name__ == "__main__":
     main()

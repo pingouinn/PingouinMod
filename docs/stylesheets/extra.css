@@ -1,0 +1,23 @@
+:root {
+  --md-primary-fg-color:        #4e328e;
+  --md-primary-fg-color--light:  #633eb5;
+  --md-primary-fg-color--dark:   #3b226e;
+  --md-accent-fg-color:         #f43f85;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color:        #3b226e;
+  --md-accent-fg-color:         #f43f85;
+}
+
+.md-header {
+  background: linear-gradient(135deg, #4b2e83 0%, #7c3aed 50%, #f43f85 100%) !important;
+}
+
+.md-typeset a {
+  color: #f43f85;
+}
+
+.md-typeset a:hover {
+  color: #fb7185;
+}

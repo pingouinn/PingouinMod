@@ -7,8 +7,7 @@ on:
       - master
     paths:
       - 'scripts/**.lua'
-      - 'tools/gen_docs.py'
-      - 'mkdocs.yml'
+      - 'docs/**'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
 
@@ -36,14 +35,14 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install dependencies
-        run: pip install mkdocs-material
+      - name: Install MkDocs dependencies
+        run: pip install "mkdocs>=1.6,<2.0" "mkdocs-material>=9.5,<10.0"
 
       - name: Generate API Markdown
-        run: python tools/gen_docs.py
+        run: python docs/tools/gen_docs.py
 
       - name: Build site with MkDocs
-        run: mkdocs build --site-dir site
+        run: mkdocs build -f docs/tools/mkdocs.yml --site-dir site
 
       - name: Upload GitHub Pages Artifact
         uses: actions/upload-pages-artifact@v3
