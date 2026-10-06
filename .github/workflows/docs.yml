@@ -1,0 +1,49 @@
+name: Generate API Documentation
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'scripts/**.lua'
+      - 'tools/gen_docs.py'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: doc-generation
+  cancel-in-progress: true
+
+jobs:
+  build-and-commit-doc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Run doc generator
+        run: python tools/gen_docs.py
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add API.md
+          if git diff --staged --quiet; then
+            echo "No API changes detected."
+          else
+            git commit -m "docs: auto-update API.md [skip ci]"
+            git push
+          fi
