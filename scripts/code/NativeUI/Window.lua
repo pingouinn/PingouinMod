@@ -306,4 +306,21 @@ function Window:Toggle()
     if self.IsOpen then self:Hide() else self:Show() end
 end
 
+--- Destroys the window and its resources.
+function Window:Destroy()
+    if self.IsOpen then
+        self:Hide()
+    end
+    if Utils.IsValidObject(self.RootWidget) then
+        Utils.TryCall("Destroy window", function()
+            self.RootWidget:RemoveFromParent()
+            self.RootWidget:Destruct()
+        end)
+    end
+    self.RootWidget = nil
+    self.HBox = nil
+    self.BodyBox = nil
+    self.Children = {}
+end
+
 return Window
