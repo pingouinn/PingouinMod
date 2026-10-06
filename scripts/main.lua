@@ -70,5 +70,36 @@ NativeUI = require("code/NativeUI/init")
 WildFire = Utils.RequireUE4SSDump(MOD_FOLDER .. "/shared/types/Wildfire.lua")
 if WildFire == nil then print("[PingouinMod] ERROR: Failed to load Wildfire UE4SS dump\n") end
 
+-- We register the mod in the global PingouinMod table to make it accessible from other scripts and for documentation purposes.
+PingouinMod = {
+    UI = require("scripts.code.NativeUI.init"),
+    Utils = {
+        Entity = require("scripts.code.utils.Entity"),
+        Math   = require("scripts.code.utils.Math"),
+		Path  = require("scripts.code.utils.Path"),
+        Player = require("scripts.code.utils.Player"),
+		Types  = require("scripts.code.utils.Types"),
+		World = require("scripts.code.utils.World"),
+    },
+    System = {
+        GC = require("scripts.code.system.GcScheduler"),
+		ShortNaming = require("scripts.code.system.ShortNamingUtils"),
+    },
+	BarrierOpener = require("scripts.code.BarrierOpener"),
+	CollisionDeactivator = require("scripts.code.CollisionDeactivator"),
+	Constants = require("scripts.code.Constants"),
+	DevUI = require("scripts.code.DevUI"),
+	DisableWorldBoundaries = require("scripts.code.DisableWorldBoundaries"),
+	EntityOutline = require("scripts.code.EntityOutline"),
+	EntitySelector = require("scripts.code.EntitySelector"),
+	GodMode = require("scripts.code.GodMode"),
+	NoClip = require("scripts.code.NoClip"),
+	PlayerCheat = require("scripts.code.PlayerCheat"),
+	Spawner = require("scripts.code.Spawner"),
+	Teleport = require("scripts.code.Teleport"),
+
+    Version = "0.1.7",
+}
+
 ----- MAIN CODE -----
 print("[PingouinMod] Mod loaded\n")
