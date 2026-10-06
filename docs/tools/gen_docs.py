@@ -8,8 +8,9 @@ LUA_DIR = Path("scripts/code")
 DOCS_DIR = Path("docs")
 
 # Parsing REGEX patterns for Lua documentation comments
+# Groupe 1 capture "local " s'il existe
 FUNC_REGEX = re.compile(
-    r"^(?:local\s+)?function\s+([a-zA-Z0-9_.:]+)\s*\((.*?)\)|"
+    r"^(local\s+)?function\s+([a-zA-Z0-9_.:]+)\s*\((.*?)\)|"
     r"^([a-zA-Z0-9_.:]+)\s*=\s*function\s*\((.*?)\)"
 )
 CLASS_REGEX = re.compile(r"^--+[\s*]*@class\s+([a-zA-Z0-9_]+)(?:\s+(.*))?$")
@@ -22,11 +23,22 @@ PARAM_REGEX = re.compile(
 RETURN_REGEX = re.compile(
     r"^--+[\s*]*@return\s*(?:\((.*?)\)|(\S+))?\s*(.*)$"
 )
+SEE_REGEX = re.compile(
+    r"^--+[\s*]*@see\s+(\S+)(?:\s+(.*))?$"
+)
 
 
-def clean_pipes(text: str) -> str:
-    """Escapes Markdown pipes inside table cells."""
-    return (text or "").replace("|", "\\|").strip()
+def clean_table_pipes(text: str) -> str:
+    """
+    Escapes pipes only inside table cells and outside of code spans.
+    Prevents backslashes from showing up inside `foo|bar` inline code.
+    """
+    if not text:
+        return ""
+    parts = text.split("`")
+    for i in range(0, len(parts), 2):
+        parts[i] = parts[i].replace("|", "\\|")
+    return "`".join(parts).strip()
 
 
 def parse_lua_file(filepath: Path):
@@ -34,7 +46,7 @@ def parse_lua_file(filepath: Path):
     classes = []
     functions = []
     current_class = None
-    current_doc = {"desc": [], "params": [], "returns": []}
+    current_doc = {"desc": [], "params": [], "returns": [], "sees": []}
     last_target = None
 
     with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
@@ -99,9 +111,39 @@ def parse_lua_file(filepath: Path):
                         last_target = ret_obj
                     continue
 
+                # @see detection
+                if "@see" in stripped:
+                    m_see = SEE_REGEX.match(stripped)
+                    if m_see:
+                        see_target = m_see.group(1).strip()
+                        see_desc = (m_see.group(2) or "").strip()
+                        current_doc["sees"].append(
+                            f"`{see_target}`" + (f" ({see_desc})" if see_desc else "")
+                        )
+                        last_target = None
+                        continue
+
                 # Multiline description handling
                 text = re.sub(r"^--+[\s*]?", "", stripped).strip()
                 if text and not text.startswith("@author"):
+                    # Inline @see cleanup if placed on the same line as description
+                    if "@see" in text:
+                        parts = re.split(r"@see\s+", text, maxsplit=1)
+                        if parts[0].strip():
+                            if last_target and not parts[0].startswith("@"):
+                                last_target["desc"] += f" {parts[0].strip()}"
+                            else:
+                                current_doc["desc"].append(parts[0].strip())
+                        if len(parts) > 1 and parts[1].strip():
+                            see_tokens = parts[1].strip().split(maxsplit=1)
+                            target = see_tokens[0]
+                            desc = see_tokens[1] if len(see_tokens) > 1 else ""
+                            current_doc["sees"].append(
+                                f"`{target}`" + (f" ({desc})" if desc else "")
+                            )
+                        last_target = None
+                        continue
+
                     if last_target and not text.startswith("@"):
                         last_target["desc"] += f" {text}"
                     else:
@@ -120,9 +162,11 @@ def parse_lua_file(filepath: Path):
                     current_doc["desc"]
                     or current_doc["params"]
                     or current_doc["returns"]
+                    or current_doc["sees"]
                 ):
-                    func_name = m_func.group(1) or m_func.group(3)
-                    args_str = m_func.group(2) if m_func.group(1) else m_func.group(4)
+                    is_local = bool(m_func.group(1))
+                    func_name = m_func.group(2) or m_func.group(4)
+                    args_str = m_func.group(3) if m_func.group(2) else m_func.group(5)
                     raw_args = [
                         a.strip() for a in (args_str or "").split(",") if a.strip()
                     ]
@@ -131,16 +175,18 @@ def parse_lua_file(filepath: Path):
                         {
                             "name": func_name,
                             "args": raw_args,
+                            "is_local": is_local,
                             "desc": " ".join(current_doc["desc"]),
                             "params": current_doc["params"],
                             "returns": current_doc["returns"],
+                            "sees": current_doc["sees"],
                         }
                     )
-                current_doc = {"desc": [], "params": [], "returns": []}
+                current_doc = {"desc": [], "params": [], "returns": [], "sees": []}
                 last_target = None
             else:
                 # Reset doc buffer when non-doc, non-function line is encountered
-                current_doc = {"desc": [], "params": [], "returns": []}
+                current_doc = {"desc": [], "params": [], "returns": [], "sees": []}
                 last_target = None
 
     if current_class:
@@ -166,7 +212,7 @@ def generate_module_page(rel_path: str, data: dict) -> str:
                 lines.append("| :--- | :--- | :--- |")
                 for f in cls["fields"]:
                     lines.append(
-                        f"| `{clean_pipes(f['name'])}` | `{clean_pipes(f['type'])}` | {clean_pipes(f['desc'])} |"
+                        f"| `{f['name']}` | `{f['type']}` | {clean_table_pipes(f['desc'])} |"
                     )
                 lines.append("")
             lines.append("---\n")
@@ -176,10 +222,19 @@ def generate_module_page(rel_path: str, data: dict) -> str:
         lines.append("## Functions\n")
         for fn in data["functions"]:
             sig = f"{fn['name']}({', '.join(fn['args'])})"
-            lines.append(f"### `{sig}`\n")
+            
+            # Badge ou libellé si la fonction est locale/interne
+            badge = " *(internal)*" if fn.get("is_local") else ""
+            lines.append(f"### `{sig}`{badge}\n")
+
+            if fn.get("is_local"):
+                lines.append("> ⚠️ **Internal function:** Not exported in the module's public API table.\n")
 
             if fn["desc"]:
                 lines.append(f"{fn['desc']}\n")
+
+            if fn.get("sees"):
+                lines.append("**See also:** " + ", ".join(fn["sees"]) + "\n")
 
             if fn["params"]:
                 lines.append("**Parameters:**\n")
@@ -187,15 +242,15 @@ def generate_module_page(rel_path: str, data: dict) -> str:
                 lines.append("| :--- | :--- | :--- |")
                 for p in fn["params"]:
                     lines.append(
-                        f"| `{clean_pipes(p['name'])}` | `{clean_pipes(p['type'])}` | {clean_pipes(p['desc'])} |"
+                        f"| `{p['name']}` | `{p['type']}` | {clean_table_pipes(p['desc'])} |"
                     )
                 lines.append("")
 
             if fn["returns"]:
                 lines.append("**Returns:**\n")
                 for r in fn["returns"]:
-                    r_type = clean_pipes(r["type"])
-                    r_desc = clean_pipes(r["desc"])
+                    r_type = r["type"].strip()
+                    r_desc = r["desc"].strip()
                     lines.append(f"- `{r_type}`" + (f" : {r_desc}" if r_desc else ""))
                 lines.append("")
 
@@ -215,9 +270,9 @@ def main():
     if DOCS_DIR.exists():
         for item in DOCS_DIR.iterdir():
             if item.is_file() and item.suffix == ".md":
-                item.unlink()  # Supprime les anciens .md
+                item.unlink()
             elif item.is_dir() and item.name not in PROTECTED_DIRS:
-                shutil.rmtree(item)  # Supprime les anciens sous-dossiers générés (ex: NativeUI, utils)
+                shutil.rmtree(item)
     else:
         DOCS_DIR.mkdir(parents=True, exist_ok=True)
 

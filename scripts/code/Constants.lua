@@ -18,29 +18,29 @@
 ---@field BUTTON_CLICK_FUNCTION string Unreal function path handling button click events
 
 ---@class NativeUILayoutConstants
----@field HORIZONTAL_FILL integer Horizontal alignment setting: fill available space
----@field HORIZONTAL_LEFT integer Horizontal alignment setting: align to the left
----@field HORIZONTAL_CENTER integer Horizontal alignment setting: align to the center
----@field HORIZONTAL_RIGHT integer Horizontal alignment setting: align to the right
----@field VERTICAL_FILL integer Vertical alignment setting: fill available space
----@field VERTICAL_TOP integer Vertical alignment setting: align to the top
----@field VERTICAL_CENTER integer Vertical alignment setting: align to the center
----@field VERTICAL_BOTTOM integer Vertical alignment setting: align to the bottom
----@field SIZE_AUTO integer Sizing rule: automatically adapt to content size
----@field SIZE_FILL integer Sizing rule: stretch and fill parent container
+---@field HORIZONTAL_FILL integer Horizontal alignment setting: fill available space = 0
+---@field HORIZONTAL_LEFT integer Horizontal alignment setting: align to the left = 1
+---@field HORIZONTAL_CENTER integer Horizontal alignment setting: align to the center = 2
+---@field HORIZONTAL_RIGHT integer Horizontal alignment setting: align to the right = 3
+---@field VERTICAL_FILL integer Vertical alignment setting: fill available space = 0
+---@field VERTICAL_TOP integer Vertical alignment setting: align to the top = 1
+---@field VERTICAL_CENTER integer Vertical alignment setting: align to the center = 2
+---@field VERTICAL_BOTTOM integer Vertical alignment setting: align to the bottom = 3
+---@field SIZE_AUTO integer Sizing rule: automatically adapt to content size = 0
+---@field SIZE_FILL integer Sizing rule: stretch and fill parent container = 1
 
 ---@class NativeUIVisibilityConstants
----@field VISIBLE integer UMG Slate visibility state: visible
----@field COLLAPSED integer UMG Slate visibility state: collapsed
----@field HIDDEN integer UMG Slate visibility state: hidden
+---@field VISIBLE integer UMG Slate visibility state: visible = 0
+---@field COLLAPSED integer UMG Slate visibility state: collapsed = 1
+---@field HIDDEN integer UMG Slate visibility state: hidden = 2
 
 ---@class NativeUIJustificationConstants
----@field LEFT integer Text justification: left-aligned
----@field CENTER integer Text justification: center-aligned
----@field RIGHT integer Text justification: right-aligned
+---@field LEFT integer Text justification: left-aligned = 0
+---@field CENTER integer Text justification: center-aligned = 1
+---@field RIGHT integer Text justification: right-aligned = 2
 
 ---@class NativeUIInputConstants
----@field MOUSE_LOCK_DO_NOT_LOCK integer Viewport mouse capture mode: do not lock mouse cursor
+---@field MOUSE_LOCK_DO_NOT_LOCK integer Viewport mouse capture mode: do not lock mouse cursor = 0
 
 ---@class NativeUIConstants
 ---@field Paths NativeUIPathsConstants Blueprint and class asset paths for UI widgets
