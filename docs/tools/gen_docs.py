@@ -6,7 +6,6 @@ from pathlib import Path
 # Source directory containing Lua scripts and destination docs directory
 LUA_DIR = Path("scripts/code")
 DOCS_DIR = Path("docs")
-BASE_URL = "/PingouinMod"
 
 # Parsing REGEX patterns for Lua documentation comments
 FUNC_REGEX = re.compile(
@@ -186,56 +185,65 @@ def parse_lua_file(filepath: Path):
 
 
 def build_global_symbol_index(modules: dict) -> dict:
-    """Builds an automatic registry of all symbols and their docs URL."""
+    """
+    Builds a global index mapping symbol names to their relative Markdown file path + anchor.
+    MkDocs natively resolves relative Markdown links during compilation.
+    """
     symbol_index = {}
 
     for rel_path, data in modules.items():
-        doc_subpath = Path(rel_path).with_suffix("").as_posix()
-        page_url = f"{BASE_URL}/{doc_subpath}/"
-
-        # 1. Index modules themselves
+        target_doc = Path(rel_path).with_suffix(".md").as_posix()
         mod_name = Path(rel_path).stem
-        symbol_index[mod_name] = page_url
 
-        # 2. Index classes / structs
+        # Module name
+        symbol_index[mod_name] = target_doc
+
+        # Classes and Structs
         for cls in data["classes"]:
             cls_name = cls["name"]
             anchor = f"#{slugify(cls_name)}"
-            target_url = f"{page_url}{anchor}"
-            symbol_index[cls_name] = target_url
+            target_entry = f"{target_doc}{anchor}"
+            symbol_index[cls_name] = target_entry
 
-            # Map namespace patterns like Constants.<ClassName>
             if mod_name == "Constants":
-                symbol_index[f"Constants.{cls_name}"] = target_url
+                symbol_index[f"Constants.{cls_name}"] = target_entry
                 clean_cls = cls_name.removeprefix("NativeUI").removesuffix("Constants")
                 if clean_cls:
-                    symbol_index[f"Constants.NativeUI.{clean_cls}"] = target_url
+                    symbol_index[f"Constants.NativeUI.{clean_cls}"] = target_entry
 
-        # 3. Index functions
+        # Functions
         for fn in data["functions"]:
             raw_name = fn["name"]
             short_name = raw_name.split(":")[-1].split(".")[-1]
             anchor = f"#{slugify(short_name)}"
-            symbol_index[raw_name] = f"{page_url}{anchor}"
-            symbol_index[f"{mod_name}.{short_name}"] = f"{page_url}{anchor}"
+            target_entry = f"{target_doc}{anchor}"
+            symbol_index[raw_name] = target_entry
+            symbol_index[f"{mod_name}.{short_name}"] = target_entry
 
     return symbol_index
 
 
-def resolve_see_link(target: str, symbol_index: dict, desc: str = "") -> str:
-    """Formats an @see target automatically into a link if resolved."""
+def resolve_see_link(target: str, current_rel_path: str, symbol_index: dict, desc: str = "") -> str:
+    """Formats an @see target automatically into a valid relative Markdown link."""
     label = f"`{target}`"
 
     if target.startswith("http://") or target.startswith("https://"):
         return f"[{label}]({target})" + (f" ({desc})" if desc else "")
 
     if target in symbol_index:
-        return f"[{label}]({symbol_index[target]})" + (f" ({desc})" if desc else "")
+        dest_md_with_anchor = symbol_index[target]
+        dest_parts = dest_md_with_anchor.split("#")
+        dest_file = dest_parts[0]
+        anchor = f"#{dest_parts[1]}" if len(dest_parts) > 1 else ""
+
+        current_dir = Path(current_rel_path).parent
+        rel_link = os.path.relpath(Path(dest_file), current_dir).replace("\\", "/")
+        return f"[{label}]({rel_link}{anchor})" + (f" ({desc})" if desc else "")
 
     return label + (f" ({desc})" if desc else "")
 
 
-def render_function_block(fn: dict, symbol_index: dict) -> list[str]:
+def render_function_block(fn: dict, current_rel_path: str, symbol_index: dict) -> list[str]:
     lines = []
     raw_name = fn["name"]
     short_name = raw_name.split(":")[-1].split(".")[-1]
@@ -254,7 +262,7 @@ def render_function_block(fn: dict, symbol_index: dict) -> list[str]:
 
     if fn.get("sees"):
         rendered_sees = [
-            resolve_see_link(t, symbol_index, d) for t, d in fn["sees"]
+            resolve_see_link(t, current_rel_path, symbol_index, d) for t, d in fn["sees"]
         ]
         lines.append("**See also:** " + ", ".join(rendered_sees) + "\n")
 
@@ -306,12 +314,12 @@ def generate_module_page(rel_path: str, data: dict, symbol_index: dict) -> str:
     if public_funcs:
         lines.append("## Functions\n")
         for fn in public_funcs:
-            lines.extend(render_function_block(fn, symbol_index))
+            lines.extend(render_function_block(fn, rel_path, symbol_index))
 
     if internal_funcs:
         lines.append("## Internal Functions\n")
         for fn in internal_funcs:
-            lines.extend(render_function_block(fn, symbol_index))
+            lines.extend(render_function_block(fn, rel_path, symbol_index))
 
     return "\n".join(lines)
 
@@ -332,7 +340,7 @@ def main():
     else:
         DOCS_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Parse all Lua files
+    # PArse all lua files
     modules = {}
     for root, _, files in os.walk(LUA_DIR):
         for file in sorted(files):
@@ -343,10 +351,10 @@ def main():
                 if data["classes"] or data["functions"]:
                     modules[rel_path] = data
 
-    # Build symbol index  across all modules
+    # Global index
     symbol_index = build_global_symbol_index(modules)
 
-    # Auto cross linking for @see tags
+    # Automatic linking for @see tags 
     for rel_path, data in modules.items():
         doc_rel_path = Path(rel_path).with_suffix(".md")
         target_file = DOCS_DIR / doc_rel_path
