@@ -6,6 +6,7 @@ from pathlib import Path
 # Source directory containing Lua scripts and destination docs directory
 LUA_DIR = Path("scripts/code")
 DOCS_DIR = Path("docs")
+BASE_URL = "/PingouinMod"
 
 # Parsing REGEX patterns for Lua documentation comments
 FUNC_REGEX = re.compile(
@@ -26,41 +27,23 @@ SEE_REGEX = re.compile(
     r"^--+[\s*]*@see\s+(\S+)(?:\s+(.*))?$"
 )
 
-# Known targets relative to docs root
-KNOWN_SEE_TARGETS = {
-    "NativeUIVisibilityConstants": "Constants/#constantsnativeuivisibility",
-    "Constants.NativeUI.Visibility": "Constants/#constantsnativeuivisibility",
-    "ESlateVisibility": "https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/UMG/Blueprint/ESlateVisibility",
-}
+
+def slugify(text: str) -> str:
+    """Generates a standard MkDocs anchor slug."""
+    s = text.lower()
+    s = re.sub(r"[^\w\s-]", "", s)
+    s = re.sub(r"[\s_]+", "-", s).strip("-")
+    return s
 
 
 def clean_table_pipes(text: str) -> str:
-    """
-    Escapes pipes only inside table cells and outside of code spans.
-    Prevents backslashes from showing up inside `foo|bar` inline code.
-    """
+    """Escapes pipes only inside table cells and outside code spans."""
     if not text:
         return ""
     parts = text.split("`")
     for i in range(0, len(parts), 2):
         parts[i] = parts[i].replace("|", "\\|")
     return "`".join(parts).strip()
-
-
-def resolve_see_link(target: str, root_prefix: str, desc: str = "") -> str:
-    """Formats an @see target into a valid relative link or external link."""
-    label = f"`{target}`"
-    if target in KNOWN_SEE_TARGETS:
-        dest = KNOWN_SEE_TARGETS[target]
-        if dest.startswith("http://") or dest.startswith("https://"):
-            url = dest
-        else:
-            url = f"{root_prefix}{dest}"
-        link_md = f"[{label}]({url})"
-    else:
-        link_md = label
-
-    return link_md + (f" ({desc})" if desc else "")
 
 
 def parse_lua_file(filepath: Path):
@@ -202,8 +185,57 @@ def parse_lua_file(filepath: Path):
     return {"classes": classes, "functions": functions}
 
 
-def render_function_block(fn: dict, root_prefix: str) -> list[str]:
-    """Formats a single function documentation section."""
+def build_global_symbol_index(modules: dict) -> dict:
+    """Builds an automatic registry of all symbols and their docs URL."""
+    symbol_index = {}
+
+    for rel_path, data in modules.items():
+        doc_subpath = Path(rel_path).with_suffix("").as_posix()
+        page_url = f"{BASE_URL}/{doc_subpath}/"
+
+        # 1. Index modules themselves
+        mod_name = Path(rel_path).stem
+        symbol_index[mod_name] = page_url
+
+        # 2. Index classes / structs
+        for cls in data["classes"]:
+            cls_name = cls["name"]
+            anchor = f"#{slugify(cls_name)}"
+            target_url = f"{page_url}{anchor}"
+            symbol_index[cls_name] = target_url
+
+            # Map namespace patterns like Constants.<ClassName>
+            if mod_name == "Constants":
+                symbol_index[f"Constants.{cls_name}"] = target_url
+                clean_cls = cls_name.removeprefix("NativeUI").removesuffix("Constants")
+                if clean_cls:
+                    symbol_index[f"Constants.NativeUI.{clean_cls}"] = target_url
+
+        # 3. Index functions
+        for fn in data["functions"]:
+            raw_name = fn["name"]
+            short_name = raw_name.split(":")[-1].split(".")[-1]
+            anchor = f"#{slugify(short_name)}"
+            symbol_index[raw_name] = f"{page_url}{anchor}"
+            symbol_index[f"{mod_name}.{short_name}"] = f"{page_url}{anchor}"
+
+    return symbol_index
+
+
+def resolve_see_link(target: str, symbol_index: dict, desc: str = "") -> str:
+    """Formats an @see target automatically into a link if resolved."""
+    label = f"`{target}`"
+
+    if target.startswith("http://") or target.startswith("https://"):
+        return f"[{label}]({target})" + (f" ({desc})" if desc else "")
+
+    if target in symbol_index:
+        return f"[{label}]({symbol_index[target]})" + (f" ({desc})" if desc else "")
+
+    return label + (f" ({desc})" if desc else "")
+
+
+def render_function_block(fn: dict, symbol_index: dict) -> list[str]:
     lines = []
     raw_name = fn["name"]
     short_name = raw_name.split(":")[-1].split(".")[-1]
@@ -221,7 +253,9 @@ def render_function_block(fn: dict, root_prefix: str) -> list[str]:
         lines.append(f"{fn['desc']}\n")
 
     if fn.get("sees"):
-        rendered_sees = [resolve_see_link(t, root_prefix, d) for t, d in fn["sees"]]
+        rendered_sees = [
+            resolve_see_link(t, symbol_index, d) for t, d in fn["sees"]
+        ]
         lines.append("**See also:** " + ", ".join(rendered_sees) + "\n")
 
     if fn["params"]:
@@ -246,13 +280,9 @@ def render_function_block(fn: dict, root_prefix: str) -> list[str]:
     return lines
 
 
-def generate_module_page(rel_path: str, data: dict) -> str:
-    """Generates the Markdown content for a single module page."""
+def generate_module_page(rel_path: str, data: dict, symbol_index: dict) -> str:
     mod_name = Path(rel_path).stem
     lines = [f"# `{mod_name}`\n", f"> Module file: `{rel_path}`\n\n---\n"]
-
-    depth = len(Path(rel_path).parent.parts)
-    root_prefix = "../" * depth if depth > 0 else "./"
 
     if data["classes"]:
         lines.append("## Structures & Classes\n")
@@ -276,12 +306,12 @@ def generate_module_page(rel_path: str, data: dict) -> str:
     if public_funcs:
         lines.append("## Functions\n")
         for fn in public_funcs:
-            lines.extend(render_function_block(fn, root_prefix))
+            lines.extend(render_function_block(fn, symbol_index))
 
     if internal_funcs:
         lines.append("## Internal Functions\n")
         for fn in internal_funcs:
-            lines.extend(render_function_block(fn, root_prefix))
+            lines.extend(render_function_block(fn, symbol_index))
 
     return "\n".join(lines)
 
@@ -302,6 +332,7 @@ def main():
     else:
         DOCS_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Parse all Lua files
     modules = {}
     for root, _, files in os.walk(LUA_DIR):
         for file in sorted(files):
@@ -312,12 +343,16 @@ def main():
                 if data["classes"] or data["functions"]:
                     modules[rel_path] = data
 
+    # Build symbol index  across all modules
+    symbol_index = build_global_symbol_index(modules)
+
+    # Auto cross linking for @see tags
     for rel_path, data in modules.items():
         doc_rel_path = Path(rel_path).with_suffix(".md")
         target_file = DOCS_DIR / doc_rel_path
         target_file.parent.mkdir(parents=True, exist_ok=True)
 
-        content = generate_module_page(rel_path, data)
+        content = generate_module_page(rel_path, data, symbol_index)
         with open(target_file, "w", encoding="utf-8") as f:
             f.write(content)
 
