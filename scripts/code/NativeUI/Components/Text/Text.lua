@@ -61,7 +61,7 @@ function TextComponent.Create(initialText, stylePath, showLine)
     }
 
     --- Updates the text value.
-    -- @param value (any) New text value.
+    -- @param value (string) New text value.
     function textObject:SetText(value)
         self.Text = tostring(value or "")
         local ftext = Utils.ToFText(self.Text)
@@ -300,6 +300,7 @@ function TextComponent.Create(initialText, stylePath, showLine)
 
     --- Retrieves the current widget visibility.
     -- @return (number|nil) NativeUI.Visibility.VISIBLE, NativeUI.Visibility.COLLAPSED, or NativeUI.Visibility.HIDDEN
+    -- @see NativeUIVisibilityConstants
     function textObject:GetVisibility()
         if not Utils.IsValidObject(self.Widget) or not self.Widget.GetVisibility then return nil end
         local ok, vis = Utils.TryCall("Text GetVisibility", function() return self.Widget:GetVisibility() end)

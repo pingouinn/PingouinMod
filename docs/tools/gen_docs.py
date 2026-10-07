@@ -26,10 +26,10 @@ SEE_REGEX = re.compile(
     r"^--+[\s*]*@see\s+(\S+)(?:\s+(.*))?$"
 )
 
-# Known targets mapping for automatic cross-linking in @see
-SEE_TARGET_LINKS = {
-    "NativeUIVisibilityConstants": "../Constants/#constantsnativeuivisibility",
-    "Constants.NativeUI.Visibility": "../Constants/#constantsnativeuivisibility",
+# Known targets relative to docs root
+KNOWN_SEE_TARGETS = {
+    "NativeUIVisibilityConstants": "Constants/#constantsnativeuivisibility",
+    "Constants.NativeUI.Visibility": "Constants/#constantsnativeuivisibility",
     "ESlateVisibility": "https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/UMG/Blueprint/ESlateVisibility",
 }
 
@@ -47,11 +47,15 @@ def clean_table_pipes(text: str) -> str:
     return "`".join(parts).strip()
 
 
-def resolve_see_link(target: str, desc: str = "") -> str:
-    """Formats an @see target into a clickable link if known, or inline code otherwise."""
-    url = SEE_TARGET_LINKS.get(target)
+def resolve_see_link(target: str, root_prefix: str, desc: str = "") -> str:
+    """Formats an @see target into a valid relative link or external link."""
     label = f"`{target}`"
-    if url:
+    if target in KNOWN_SEE_TARGETS:
+        dest = KNOWN_SEE_TARGETS[target]
+        if dest.startswith("http://") or dest.startswith("https://"):
+            url = dest
+        else:
+            url = f"{root_prefix}{dest}"
         link_md = f"[{label}]({url})"
     else:
         link_md = label
@@ -129,7 +133,7 @@ def parse_lua_file(filepath: Path):
                     if m_see:
                         target = m_see.group(1).strip()
                         desc = (m_see.group(2) or "").strip()
-                        current_doc["sees"].append(resolve_see_link(target, desc))
+                        current_doc["sees"].append((target, desc))
                         last_target = None
                         continue
 
@@ -146,7 +150,7 @@ def parse_lua_file(filepath: Path):
                             see_tokens = parts[1].strip().split(maxsplit=1)
                             target = see_tokens[0]
                             desc = see_tokens[1] if len(see_tokens) > 1 else ""
-                            current_doc["sees"].append(resolve_see_link(target, desc))
+                            current_doc["sees"].append((target, desc))
                         last_target = None
                         continue
 
@@ -198,17 +202,15 @@ def parse_lua_file(filepath: Path):
     return {"classes": classes, "functions": functions}
 
 
-def render_function_block(fn: dict) -> list[str]:
+def render_function_block(fn: dict, root_prefix: str) -> list[str]:
     """Formats a single function documentation section."""
     lines = []
-    # Short name for H3 so the right sidebar remains clean and readable
     raw_name = fn["name"]
     short_name = raw_name.split(":")[-1].split(".")[-1]
-    
+
     badge = " *(internal)*" if fn.get("is_local") else ""
     lines.append(f"### {short_name}{badge}\n")
 
-    # Full signature displayed as a code block immediately under the heading
     sig = f"{fn['name']}({', '.join(fn['args'])})"
     lines.append(f"```lua\n{sig}\n```\n")
 
@@ -219,7 +221,8 @@ def render_function_block(fn: dict) -> list[str]:
         lines.append(f"{fn['desc']}\n")
 
     if fn.get("sees"):
-        lines.append("**See also:** " + ", ".join(fn["sees"]) + "\n")
+        rendered_sees = [resolve_see_link(t, root_prefix, d) for t, d in fn["sees"]]
+        lines.append("**See also:** " + ", ".join(rendered_sees) + "\n")
 
     if fn["params"]:
         lines.append("**Parameters:**\n")
@@ -248,7 +251,9 @@ def generate_module_page(rel_path: str, data: dict) -> str:
     mod_name = Path(rel_path).stem
     lines = [f"# `{mod_name}`\n", f"> Module file: `{rel_path}`\n\n---\n"]
 
-    # Render Classes and Structs
+    depth = len(Path(rel_path).parent.parts)
+    root_prefix = "../" * depth if depth > 0 else "./"
+
     if data["classes"]:
         lines.append("## Structures & Classes\n")
         for cls in data["classes"]:
@@ -265,19 +270,18 @@ def generate_module_page(rel_path: str, data: dict) -> str:
                 lines.append("")
             lines.append("---\n")
 
-    # Split functions into public and internal groups
     public_funcs = [f for f in data["functions"] if not f.get("is_local")]
     internal_funcs = [f for f in data["functions"] if f.get("is_local")]
 
     if public_funcs:
         lines.append("## Functions\n")
         for fn in public_funcs:
-            lines.extend(render_function_block(fn))
+            lines.extend(render_function_block(fn, root_prefix))
 
     if internal_funcs:
         lines.append("## Internal Functions\n")
         for fn in internal_funcs:
-            lines.extend(render_function_block(fn))
+            lines.extend(render_function_block(fn, root_prefix))
 
     return "\n".join(lines)
 
@@ -326,7 +330,7 @@ def main():
     categories = {}
     for mod_path in sorted(modules.keys()):
         parts = mod_path.split("/")
-        cat = parts[0] if len(parts) > 1 else "Core Features"
+        cat = parts[0].capitalize() if len(parts) > 1 else "Core Features"
         categories.setdefault(cat, []).append(mod_path)
 
     for cat, mods in categories.items():

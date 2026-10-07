@@ -342,6 +342,7 @@ function TextInputComponent.Create(placeholder, initialText, onCommit, onChange,
 
     --- Retrieves the current widget visibility.
     -- @return (number|nil) NativeUI.Visibility.VISIBLE, NativeUI.Visibility.COLLAPSED, or NativeUI.Visibility.HIDDEN
+    -- @see NativeUIVisibilityConstants
     function inputObject:GetVisibility()
         if not Utils.IsValidObject(self.Widget) or not self.Widget.GetVisibility then return nil end
         local ok, vis = Utils.TryCall("TextInput GetVisibility", function() return self.Widget:GetVisibility() end)

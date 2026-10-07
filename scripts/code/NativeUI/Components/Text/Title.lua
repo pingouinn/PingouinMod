@@ -38,7 +38,7 @@ function TitleComponent.Create(initialText, stylePath)
     }
 
     --- Updates the title text.
-    -- @param value (any) New title text.
+    -- @param value (string) New title text.
     function titleObject:SetText(value)
         self.Text = tostring(value or "")
         TextUtils.SetText(instance, Utils.ToFText(self.Text))

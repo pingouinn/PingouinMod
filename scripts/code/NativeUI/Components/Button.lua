@@ -90,7 +90,7 @@ function ButtonComponent.Create(initialText, onClick, stylePath)
     end
 
     --- Updates the button text.
-    -- @param value (any) New button text.
+    -- @param value (string) New button text.
     function buttonObject:SetText(value)
         self.Text = tostring(value or "")
         local ftext = Utils.ToFText(self.Text)
@@ -262,6 +262,7 @@ function ButtonComponent.Create(initialText, onClick, stylePath)
 
     --- Retrieves the current widget visibility.
     -- @return (number|nil) NativeUI.Visibility.VISIBLE, NativeUI.Visibility.COLLAPSED, or NativeUI.Visibility.HIDDEN
+    -- @see NativeUIVisibilityConstants
     function buttonObject:GetVisibility()
         if not Utils.IsValidObject(self.Widget) or not self.Widget.GetVisibility then return nil end
         local ok, vis = Utils.TryCall("Button GetVisibility", function() return self.Widget:GetVisibility() end)
