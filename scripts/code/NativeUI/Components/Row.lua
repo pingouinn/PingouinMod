@@ -1,4 +1,5 @@
---- Row.lua provides a wrapper for creating and managing horizontal row containers in Unreal Engine's NativeUI system. It includes methods for adding widgets to the row, applying size constraints, and refreshing child components.
+--- Row.lua provides a wrapper for creating and managing horizontal row containers in Unreal Engine's NativeUI system.
+-- It includes methods for adding, removing, sizing, and clearing child components, as well as visibility and interaction controls.
 -- @author PingouinTheDev
 
 local Core = require("code/NativeUI/Core")
@@ -80,45 +81,159 @@ function Row.Create(parentWidget)
         return nil
     end
 
-    return setmetatable({Widget = instance, Children = {}}, Row)
+    return setmetatable({
+        Widget = instance,
+        Children = {},
+        isEnabled = true
+    }, Row)
 end
 
---- Adds a widget to the row.
--- @param widgetItem (table|UWidget) Component wrapper or widget to add.
+--- Adds a widget to the horizontal row.
+-- @param widgetItem (table|UWidget) Component wrapper or raw widget to add.
 -- @param fillRatio (number|nil) Fill ratio; zero or nil uses automatic sizing.
--- @param padding (table|nil) Optional Slate padding.
--- @param verticalAlignment (number|nil) Vertical alignment enum.
--- @param constraints (table|nil) Optional width and height constraints.
--- @return (FHorizontalBoxSlot|nil) Created slot, or nil when adding fails.
+-- @param padding (table|nil) Optional Slate padding table {Left = 0, Top = 0, Right = 0, Bottom = 0}.
+-- @param verticalAlignment (number|nil) Optional vertical alignment enum value.
+-- @param constraints (table|nil) Optional width and height constraints like {width = 120, height = 40}.
+-- @see NativeUILayoutConstants
+-- @return (UHorizontalBoxSlot|nil) Created slot, or nil when adding fails.
 function Row:Add(widgetItem, fillRatio, padding, verticalAlignment, constraints)
-    if not widgetItem then return nil end
+    if not widgetItem or not Utils.IsValidObject(self.Widget) then return nil end
     local rawWidget = widgetItem.Widget or widgetItem
     if not Utils.IsValidObject(rawWidget) then return nil end
 
+    local widgetToAdd = rawWidget
+    local sizeBoxWrapper = nil
+
     if constraints then
-        rawWidget = WrapInSizeBox(rawWidget, constraints.width, constraints.height, self.Widget)
+        sizeBoxWrapper = WrapInSizeBox(rawWidget, constraints.width, constraints.height, self.Widget)
+        widgetToAdd = sizeBoxWrapper
     end
 
     local success, slot = Utils.TryCall("Add widget to row", function()
-        return self.Widget:AddChildToHorizontalBox(rawWidget)
+        return self.Widget:AddChildToHorizontalBox(widgetToAdd)
     end)
     if not success or not slot then return nil end
 
     Utils.TryCall("Configure row slot", function()
         local isFill = fillRatio and fillRatio > 0
-        slot:SetSize({Value = isFill and fillRatio or 1.0, SizeRule = isFill and Constants.NativeUI.Layout.SIZE_FILL or Constants.NativeUI.Layout.SIZE_AUTO})
+        slot:SetSize({
+            Value = isFill and fillRatio or 1.0,
+            SizeRule = isFill and Constants.NativeUI.Layout.SIZE_FILL or Constants.NativeUI.Layout.SIZE_AUTO
+        })
         if padding then slot:SetPadding(padding) end
         slot:SetVerticalAlignment(verticalAlignment or Constants.NativeUI.Layout.VERTICAL_CENTER)
     end)
-    table.insert(self.Children, widgetItem)
+
+    table.insert(self.Children, {
+        Item = widgetItem,
+        RawWidget = rawWidget,
+        Wrapper = sizeBoxWrapper
+    })
     return slot
 end
 
---- Refreshes all child components in the row.
-function Row:Refresh()
-    for _, child in ipairs(self.Children) do
-        if child.Refresh then child:Refresh() end
+--- Removes a child widget from the row container.
+-- @param widgetItem (table|UWidget) Component wrapper or raw widget to remove.
+-- @return (boolean) True if removed successfully, false otherwise.
+function Row:RemoveChild(widgetItem)
+    if not widgetItem or not Utils.IsValidObject(self.Widget) then return false end
+    local rawWidget = widgetItem.Widget or widgetItem
+    if not Utils.IsValidObject(rawWidget) then return false end
+
+    local targetToRemove = rawWidget
+    local foundIndex = nil
+
+    for i, entry in ipairs(self.Children) do
+        if entry.Item == widgetItem or entry.RawWidget == rawWidget or entry.Wrapper == rawWidget then
+            if entry.Wrapper then
+                targetToRemove = entry.Wrapper
+            end
+            foundIndex = i
+            break
+        end
     end
+
+    local removed = false
+    Utils.TryCall("Remove child from row", function()
+        removed = self.Widget:RemoveChild(targetToRemove)
+    end)
+
+    if foundIndex then
+        table.remove(self.Children, foundIndex)
+    end
+
+    return removed == true
+end
+
+--- Clears all child widgets from the row.
+function Row:ClearChildren()
+    if not Utils.IsValidObject(self.Widget) then return end
+    Utils.TryCall("Clear row children", function()
+        self.Widget:ClearChildren()
+    end)
+    self.Children = {}
+end
+
+--- Retrieves the total number of child widgets in the row.
+-- @return (number) Number of children.
+function Row:GetChildrenCount()
+    if not Utils.IsValidObject(self.Widget) or not self.Widget.GetChildrenCount then
+        return #self.Children
+    end
+    local ok, count = Utils.TryCall("Get row children count", function()
+        return self.Widget:GetChildrenCount()
+    end)
+    return ok and count or #self.Children
+end
+
+--- Retrieves a child wrapper or widget at the specified 1-based index.
+-- @param index (number) 1-based child index.
+-- @return (table|UWidget|nil) Child component or nil if out of bounds.
+function Row:GetChildAt(index)
+    local idx = tonumber(index)
+    if not idx or idx < 1 then return nil end
+    return self.Children[idx]
+end
+
+--- Sets the visibility of the row container.
+-- @param visibility (number) Visibility state (0 to 4).
+-- @see NativeUIVisibilityConstants
+function Row:SetVisibility(visibility)
+    if not Utils.IsValidObject(self.Widget) then return end
+    local v = tonumber(visibility)
+    if not v or v < 0 or v > 4 then return end
+
+    Utils.TryCall("Set row visibility", function()
+        self.Widget:SetVisibility(v)
+    end)
+end
+
+--- Retrieves the current visibility state of the row container.
+-- @return (number|nil) Visibility state (0 to 4) or nil on failure.
+-- @see NativeUIVisibilityConstants
+function Row:GetVisibility()
+    if not Utils.IsValidObject(self.Widget) or not self.Widget.GetVisibility then return nil end
+    local ok, vis = Utils.TryCall("Get row visibility", function()
+        return self.Widget:GetVisibility()
+    end)
+    return ok and vis or nil
+end
+
+--- Enables or disables interaction on the row container.
+-- @param isEnabled (boolean) Whether the container should be interactive.
+function Row:SetEnabled(isEnabled)
+    self.isEnabled = isEnabled == true
+    if Utils.IsValidObject(self.Widget) and self.Widget.SetIsEnabled then
+        Utils.TryCall("Set row enabled", function()
+            self.Widget:SetIsEnabled(self.isEnabled)
+        end)
+    end
+end
+
+--- Checks if the row container is currently enabled.
+-- @return (boolean) True if enabled, false otherwise.
+function Row:GetIsEnabled()
+    return self.isEnabled == true
 end
 
 return Row
