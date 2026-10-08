@@ -98,14 +98,34 @@ function Entity.GetTopLevelEntity(entity)
         visited[current] = true
         local parent = nil
 
-        if current.GetOwner then
-            local success, owner = Types.TryCall("Read entity owner", function() return current:GetOwner() end)
-            if success and Utils.IsValidObject(owner) then parent = owner end
+        -- If we are on a component, we first check if it has an owner that is an Actor
+        if current.GetOwner and current:IsA("/Script/Engine.ActorComponent") then
+            local success, owner = Types.TryCall("Read component owner", function() return current:GetOwner() end)
+            if success and Utils.IsValidObject(owner) then 
+                parent = owner 
+            end
         end
 
+        -- If we are on an Actor, we check if it has an attached parent actor
         if not parent and current.GetAttachParentActor then
             local success, parentActor = Types.TryCall("Read attached parent actor", function() return current:GetAttachParentActor() end)
-            if success and Utils.IsValidObject(parentActor) then parent = parentActor end
+            if success and Utils.IsValidObject(parentActor) then 
+                parent = parentActor 
+            end
+        end
+
+        -- If we still don't have a parent, we check if the actor has an owner that is not a controller
+        if not parent and current.GetOwner then
+            local success, owner = Types.TryCall("Read entity owner", function() return current:GetOwner() end)
+            if success and Utils.IsValidObject(owner) then
+                local isController = false
+                Types.TryCall("is owner is a controller", function()
+                    isController = owner:IsA("/Script/Engine.Controller")
+                end)
+                if not isController then
+                    parent = owner
+                end
+            end
         end
 
         if not parent then break end
