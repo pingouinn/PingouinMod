@@ -19,7 +19,7 @@ function BarrierOpener.OpenBarriers(closeWhenFar)
     local player = Utils.GetPlayer()
     if not Utils.IsValidObject(player) then return nil end
 
-    if not Utils.IsVehiclePawn(player) then return nil end
+    if not Utils.IsPlayerInVehicle(player) then return nil end
 
     local playerPos = Utils.GetActorLocation(player)
     if not playerPos then return nil end

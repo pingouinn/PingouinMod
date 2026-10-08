@@ -4,16 +4,6 @@
 local Types = require("code/utils/Types")
 local Entity = {}
 
---- Checks if a given player controller or character is currently in a vehicle.
--- @param playerControllerOrCharacter (UPlayerController|ACharacter) The player controller or character to check
--- @return (boolean) True if the player is in a vehicle, false otherwise
-function Entity.IsVehiclePawn(playerControllerOrCharacter)
-    if not playerControllerOrCharacter then return false end
-    local character = playerControllerOrCharacter.LocalCharacter or playerControllerOrCharacter
-    if not Types.IsValidObject(character) then return false end
-    return Types.IsValidObject(character.InVehicle) or character.bVehicleDriver == true
-end
-
 --- Retrieves an actor's world location using the available Unreal accessor.
 -- @param actor (AActor) The actor whose location should be read
 -- @return (FVector|nil) The normalized world location, or nil when unavailable

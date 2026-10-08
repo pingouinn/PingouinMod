@@ -147,7 +147,7 @@ function NoClip.ToggleNoClip()
     end
 
     -- Gets the player object to check if in vehicle
-    local isVeh = Utils.IsVehiclePawn(playerController)
+    local isVeh = Utils.IsPlayerInVehicle(playerController)
 
     print("[PingouinMod] Toggle NoClip mode ON\n")
     lastPos = {X = 0.0, Y = 0.0, Z = 0.0}
@@ -163,7 +163,7 @@ function NoClip.ToggleNoClip()
                     RestorePawnState(activePawnState)
                     activePawn = currentPawn
                     activePawnState = CaptureAndDisablePawn(currentPawn)
-                    isVeh = Utils.IsVehiclePawn(activePlayerController)
+                    isVeh = Utils.IsPlayerInVehicle(activePlayerController)
                 end
                 if not Utils.IsValidObject(activePawn) or not activePawnState then return false end
 
