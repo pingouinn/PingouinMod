@@ -12,7 +12,7 @@ function TestHelpers.AddMethodButton(window, label, status, callback)
             status:SetText(label .. " -> " .. message)
         else
             status:SetText(label .. " -> ERROR: " .. tostring(result))
-            print("[NativeUI Test] " .. label .. " failed: " .. tostring(result))
+            print("[Test] " .. label .. " failed: " .. tostring(result))
         end
     end))
 end
