@@ -162,4 +162,16 @@ function Entity.DisableEntityCollision(entity)
     return disabled
 end
 
+--- Sets the spawn collision handling method on an actor or spawn params context.
+-- @param actor (AActor) The target actor
+-- @param collisionMethod (number) ESpawnActorCollisionHandlingMethod from Constants.SpawnCollisionHandling
+-- @see SpawnCollisionHandlingConstants
+function Entity.SetActorSpawnCollisionMethod(actor, collisionMethod)
+    if not Utils.IsValidObject(actor) or type(collisionMethod) ~= "number" then return end
+    
+    Types.TryCall("Set Actor SpawnCollisionHandlingMethod", function()
+        actor.SpawnCollisionHandlingMethod = collisionMethod
+    end)
+end
+
 return Entity

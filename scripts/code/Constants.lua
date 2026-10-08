@@ -54,6 +54,13 @@
 ---@field STATIC_MESH_COMPONENT_CLASS_PATH string Class path used to resolve StaticMeshComponent instances
 ---@field TRACE_DISTANCE number Default raycast trace length in Unreal units
 
+---@class SpawnCollisionHandlingConstants
+---@field Undefined integer Spawn collision handling: undefined = 0
+---@field AlwaysSpawn integer Spawn collision handling: always spawn, ignoring collisions = 1
+---@field AdjustIfPossibleButDontSpawnIfColliding integer Spawn collision handling: adjust position if possible, but dont spawn if colliding = 2
+---@field AdjustIfPossibleButAlwaysSpawn integer Spawn collision handling: adjust position if possible, but always spawn = 3
+---@field DontSpawnIfColliding = 4
+
 local Constants = {
 
     -- Meshes and actors
@@ -62,6 +69,14 @@ local Constants = {
     STATIC_MESH_COMPONENT_CLASS_PATH = "/Script/Engine.StaticMeshComponent",
     TRACE_DISTANCE = 10000.0,
 
+}
+
+Constants.SpawnCollisionHandling = {
+    Undefined = 0,
+    AlwaysSpawn = 1,
+    AdjustIfPossibleButDontSpawnIfColliding = 2,
+    AdjustIfPossibleButAlwaysSpawn = 3,
+    DontSpawnIfColliding = 4,
 }
 
 
