@@ -87,12 +87,17 @@ local function SpawnActorInternal(world, spawnClass, location, rotation, collisi
 end
 
 --- Spawns an actor of the specified class in front of the player.
--- @param ActorClassPath (string) The full Unreal asset path of the actor class
+-- @param actorName (string) The full Unreal asset path of the actor class or the ShortName of the actor
 -- @param distInFront (number|nil) The distance in front of the player to spawn the actor
 -- @param verbose (boolean|nil) Whether to print debug messages
 -- @param collisionMethod (number|nil) ESpawnActorCollisionHandlingMethod from Constants.SpawnCollisionHandling
 -- @return (AActor|nil) The spawned actor, or nil if spawning failed
-function Spawner.SpawnActor(ActorClassPath, distInFront, verbose, collisionMethod)
+function Spawner.SpawnActor(actorName, distInFront, verbose, collisionMethod)
+    local ActorClassPath = ShortNaming.HandleShortNaming(tostring(actorName))
+    if ActorClassPath == nil then 
+        print(string.format("[PingouinMod] ERROR: Could not resolve class name: %s\n", actorName)) 
+        return nil 
+    end
     verbose = verbose or false
     collisionMethod = collisionMethod or Constants.SpawnCollisionHandling.AdjustIfPossibleButAlwaysSpawn
     print("[PingouinMod] Spawning actor of class : " .. ActorClassPath .. "\n")
@@ -301,12 +306,6 @@ RegisterConsoleCommandHandler("Spawn", function(fullCommand, args, _)
         print("[PingouinMod] Usage: Spawn <ClassName> [distInFront] [verbose] [collisionMethod]\n") 
         return false 
     end
-
-    local className = ShortNaming.HandleShortNaming(args[1])
-    if className == nil then 
-        print(string.format("[PingouinMod] ERROR: Could not resolve class name: %s\n", args[1])) 
-        return false 
-    end
     
     local distInFront = nil
     local verbose = false
@@ -325,7 +324,7 @@ RegisterConsoleCommandHandler("Spawn", function(fullCommand, args, _)
     end
 
     ExecuteInGameThread(function()
-        Spawner.SpawnActor(className, distInFront, verbose, collisionMethod)
+        Spawner.SpawnActor(args[1], distInFront, verbose, collisionMethod)
     end)
     return true
 end)
