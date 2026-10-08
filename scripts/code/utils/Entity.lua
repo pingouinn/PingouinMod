@@ -174,4 +174,13 @@ function Entity.SetActorSpawnCollisionMethod(actor, collisionMethod)
     end)
 end
 
+--- Gets the spawn collision handling method on an actor or spawn params context.
+-- @param actor (AActor) The target actor
+-- @param collisionMethod (number) ESpawnActorCollisionHandlingMethod from Constants.SpawnCollisionHandling
+-- @see SpawnCollisionHandlingConstants
+function Entity.GetActorSpawnCollisionMethod(actor)
+    if not Utils.IsValidObject(actor) then return nil end
+    return actor.SpawnCollisionHandlingMethod
+end
+
 return Entity
