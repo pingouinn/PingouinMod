@@ -13,23 +13,50 @@ local function IsUnsupportedCustomDepthError(errorMessage)
     return string.find(tostring(errorMessage), "TrivialObject", 1, true) ~= nil
 end
 
+--- Checks if a component is a valid renderable mesh.
+-- @param comp (UActorComponent) The component to check
+-- @return (boolean) True if it's a mesh component, false otherwise
+local function IsMeshComponent(comp)
+    if not Utils.IsValidObject(comp) then return false end
+    
+    -- Filter out collision boxes, particles, cameras and logic components
+    local className = tostring(comp.ClassName or "")
+    if string.find(className, "MeshComponent", 1, true) then return true end
+    
+    -- Fallback check on standard mesh properties
+    if comp.StaticMesh ~= nil or comp.SkeletalMesh ~= nil then return true end
+    
+    return false
+end
+
 --- Enables or disables custom depth rendering on a component, optionally setting a stencil value.
 -- @param comp (UActorComponent) The component to modify
 -- @param bEnabled (boolean) Whether to enable or disable custom depth rendering
 -- @param stencilValue (number) The stencil value to use for custom depth rendering
 local function EnableCustomDepthOnComponent(comp, bEnabled, stencilValue)
+    comp = Utils.UnwrapValue(comp)
     if not Utils.IsValidObject(comp) then return end
 
-    if comp.SetRenderCustomDepth then
-        local success, errorMessage = Utils.TryCall("Update custom depth", function()
+    -- Filter non renderable components (e.g., collision boxes, particles, cameras, logic components)
+    local canRender = false
+    Utils.TryCall("Check render component", function()
+        canRender = (comp.bRenderInMainPass == true) or (comp.bCastShadow == true)
+    end)
+    if not canRender then return end
+
+    local success, errorMessage = Utils.TryCall("Update custom depth", function()
+        -- in UE4SS, UFunctions are "userdata"
+        local fn = comp.SetRenderCustomDepth
+        if fn ~= nil and (type(fn) == "userdata" or type(fn) == "function") then
             comp:SetRenderCustomDepth(bEnabled)
-            if bEnabled and stencilValue ~= nil and comp.SetCustomDepthStencilValue then
+            if bEnabled and stencilValue ~= nil and comp.SetCustomDepthStencilValue ~= nil then
                 comp:SetCustomDepthStencilValue(stencilValue)
             end
-        end)
-        if not success and not IsUnsupportedCustomDepthError(errorMessage) then
-            print(string.format("[PingouinMod] Failed to update custom depth on component: %s\n", tostring(errorMessage)))
         end
+    end)
+
+    if not success and not IsUnsupportedCustomDepthError(errorMessage) then
+        print(string.format("[PingouinMod] Failed to update custom depth on component: %s\n", tostring(errorMessage)))
     end
 end
 
@@ -47,18 +74,24 @@ local function ProcessComponentHierarchy(comp, bEnabled, stencilValue, visited)
 
     if comp.AttachChildren then
         local children = comp.AttachChildren
-        if children.ForEach then
-            children:ForEach(function(index, child)
-                local success, unwrappedChild = Utils.TryCall("Unwrap attached component", function() return Utils.UnwrapValue(child) end)
-                if unwrappedChild then
-                    ProcessComponentHierarchy(unwrappedChild, bEnabled, stencilValue, visited)
-                end
-            end)
-        elseif type(children) == "table" then
-            for _, child in ipairs(children) do
-                local success, unwrappedChild = Utils.TryCall("Unwrap attached component", function() return Utils.UnwrapValue(child) end)
-                if unwrappedChild then
-                    ProcessComponentHierarchy(unwrappedChild, bEnabled, stencilValue, visited)
+        local count = 0
+        local okCount = Utils.TryCall("Get attach children count", function()
+            count = #children
+        end)
+
+        if okCount and count > 0 then
+            for i = 1, count do
+                local child = nil
+                local ok = Utils.TryCall("Get attach child", function()
+                    child = children[i]
+                end)
+                if ok and child then
+                    local success, unwrappedChild = Utils.TryCall("Unwrap attached component", function()
+                        return Utils.UnwrapValue(child)
+                    end)
+                    if unwrappedChild then
+                        ProcessComponentHierarchy(unwrappedChild, bEnabled, stencilValue, visited)
+                    end
                 end
             end
         end
@@ -90,18 +123,24 @@ local function ApplyCustomDepthToActor(actor, bEnabled, stencilValue, visited)
     -- We also check for attached child actors and apply the same logic recursively
     if actor.Children then
         local childrenActors = actor.Children
-        if childrenActors.ForEach then
-            childrenActors:ForEach(function(index, childActor)
-                local success, unwrappedChild = Utils.TryCall("Unwrap child actor", function() return Utils.UnwrapValue(childActor) end)
-                if unwrappedChild then
-                    ProcessComponentHierarchy(unwrappedChild, bEnabled, stencilValue, visited)
-                end
-            end)
-        elseif type(childrenActors) == "table" then
-            for _, childActor in ipairs(childrenActors) do
-                local success, unwrappedChild = Utils.TryCall("Unwrap child actor", function() return Utils.UnwrapValue(childActor) end)
-                if unwrappedChild then
-                    ProcessComponentHierarchy(unwrappedChild, bEnabled, stencilValue, visited)
+        local count = 0
+        local okCount = Utils.TryCall("Get children actors count", function()
+            count = #childrenActors
+        end)
+
+        if okCount and count > 0 then
+            for i = 1, count do
+                local childActor = nil
+                local ok = Utils.TryCall("Get child actor", function()
+                    childActor = childrenActors[i]
+                end)
+                if ok and childActor then
+                    local success, unwrappedChild = Utils.TryCall("Unwrap child actor", function()
+                        return Utils.UnwrapValue(childActor)
+                    end)
+                    if unwrappedChild then
+                        ProcessComponentHierarchy(unwrappedChild, bEnabled, stencilValue, visited)
+                    end
                 end
             end
         end
