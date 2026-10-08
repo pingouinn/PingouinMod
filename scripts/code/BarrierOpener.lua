@@ -16,26 +16,28 @@ local NO_BARRIER_CHECK_LIMIT = 5
 -- @param closeWhenFar (boolean) If true, barriers will close when the player is far away.
 -- @return (boolean) True if at least one barrier was found and processed, false if no barriers were found, nil if the player is not in a vehicle.
 function BarrierOpener.OpenBarriers(closeWhenFar)
-    local player = Utils.GetPlayer()
+    local player = Utils.GetPlayerController()
     if not Utils.IsValidObject(player) then return nil end
 
     if not Utils.IsPlayerInVehicle(player) then return nil end
 
-    local playerPos = Utils.GetActorLocation(player)
+    local playerPos = Utils.GetActorLocation(player.Pawn)
     if not playerPos then return nil end
 
     local barriers = FindAllOf("BP_Gate_C")
-    if not barriers then return false end
+    if not barriers then  
+        return false 
+    end
 
     local validBarrierFound = false
     for _, barrier in ipairs(barriers) do
         if Utils.IsValidObject(barrier) then
-            validBarrierFound = true
             local barrierPos = Utils.GetActorLocation(barrier)
             if barrierPos then
                 local distance = math.sqrt((playerPos.X - barrierPos.X)^2 + (playerPos.Y - barrierPos.Y)^2 + (playerPos.Z - barrierPos.Z)^2)
                 local WFDoor = barrier.WFDoor
                 if Utils.IsValidObject(WFDoor) then
+                    validBarrierFound = true
                     local barrierKey = Utils.GetEntityKey(barrier)
                     local state = barrierStates[barrierKey]
 
